@@ -159,7 +159,6 @@ class PyMFBase():
 
             # check if the err is not changing anymore
             if i > 1 and compute_err and self._converged(i):
-                # adjust the error measure
                 self.ferr = self.ferr[:i]
                 break
 
@@ -189,6 +188,4 @@ class PyMFBase():
         )
         loaded_model.W = npzfile["W"]
         loaded_model.H = npzfile["H"]
-        # If 'ferr' is saved and needs to be loaded, uncomment the following line
-        # loaded_model.ferr = npzfile['ferr']
         return loaded_model
