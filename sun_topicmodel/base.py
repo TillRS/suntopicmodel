@@ -20,13 +20,12 @@ import logging
 import logging.config
 
 import numpy as np
-import scipy.sparse
 
 __all__ = ["PyMFBase"]
 _EPS = np.finfo(float).eps
 
 
-class PyMFBase():
+class PyMFBase:
     """
     PyMF Base Class. Does nothing useful apart from poviding some basic methods.
     """
@@ -36,7 +35,7 @@ class PyMFBase():
     _EPS = _EPS
 
     def __init__(self, data, num_bases, random_state=None, **kwargs):
-        """ 
+        """
         Initilaize the PyMFBase class.
         data : array_like, shape (_num_samples, _data_dimension)
         num_bases : int, specifies the number of topics to model
@@ -73,7 +72,7 @@ class PyMFBase():
 
     def _init_w(self):
         """Overwrite for initializing W."""
-        
+
     def _update_h(self):
         """Overwrite for updating H."""
 
@@ -144,7 +143,6 @@ class PyMFBase():
             self.ferr = np.zeros(niter)
 
         for i in range(niter):
-            
             if compute_h:
                 self._update_h()
 
