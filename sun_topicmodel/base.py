@@ -21,7 +21,6 @@ import logging.config
 
 import numpy as np
 import scipy.sparse
-from sklearn.cluster import KMeans
 
 __all__ = ["PyMFBase"]
 _EPS = np.finfo(float).eps
@@ -36,8 +35,13 @@ class PyMFBase():
 
     _EPS = _EPS
 
-    def __init__(self, data, num_bases=4, random_state=None, legacy_mode = False, **kwargs):
-        """ """
+    def __init__(self, data, num_bases, random_state=None, **kwargs):
+        """ 
+        Initilaize the PyMFBase class.
+        data : array_like, shape (_num_samples, _data_dimension)
+        num_bases : int, specifies the number of topics to model
+        random_state : int, seed for random number generator
+        """
 
         def setup_logging():
             # create logger
@@ -62,80 +66,14 @@ class PyMFBase():
         self.data = data
         self._num_bases = num_bases
         self.random_state = random_state
-        self.legacy_mode = legacy_mode
-
-        # initialize H and W to random values
-        # TILL: note - this def of dimensions vs num_samples can be confusing!
-        # self._data_dimension, self._num_samples = self.data.shape
         self._num_samples, self._data_dimension = self.data.shape
 
-    # def residual(self):
-    #     """ Returns the residual in % of the total amount of data
-
-    #     Returns
-    #     -------
-    #     residual : float
-    #     """
-    #     res = np.sum(np.abs(self.data - np.dot(self.W, self.H)))
-    #     total = 100.0*res/np.sum(np.abs(self.data))
-    #     return total
-
-    def frobenius_norm(self):
-        """Frobenius norm (||data - WH||) of a data matrix and a low rank
-        approximation given by WH. Minimizing the Fnorm is the most common
-        optimization criterion for matrix factorization methods.
-
-        Returns:
-        -------
-        frobenius norm: F = ||data - WH||
-
-        """
-        # check if W and H exist
-        if hasattr(self, "H") and hasattr(self, "W"):
-            if scipy.sparse.issparse(self.data):
-                tmp = self.data[:, :] - (self.W * self.H)
-                tmp = tmp.multiply(tmp).sum()
-                err = np.sqrt(tmp)
-            else:
-                err = np.sqrt(np.sum((self.data[:, :] - np.dot(self.W, self.H)) ** 2))
-        else:
-            err = None
-
-        return err
-
     def _init_h(self):
-        """Initialize H to random values [0,1]."""
-        # add a small value, otherwise nmf and related methods get into trouble as
-        # they have difficulties recovering from zero.
-        np.random.seed(self.random_state)
-        
-        if self.legacy_mode == False:
-            self.H = np.random.random((self._num_bases, self._data_dimension)) + 10**-4
-        else:
-            self.H = np.random.random((self._data_dimension, self._num_bases)).T + 10**-4
+        """Overwrite for initializing H."""
 
     def _init_w(self):
-        """Initialize W using k-means ++"""
-        self.W = np.zeros((self._num_samples, self._num_bases))
-        # print(f"Data: {self.data}")
-        km = KMeans(
-            n_clusters=self._num_bases,
-            random_state=self.random_state,
-            n_init="auto",
-            init="k-means++",
-        ).fit(
-            self.data
-        )
-        assign = km.labels_
-        print(f"Assign: {assign}")
-
-        num_i = np.zeros(self._num_bases)
-        for i in range(self._num_bases):
-            num_i[i] = len(np.where(assign == i)[0])
-
-        self.W[range(len(assign)), assign] = 1.0
-        self.W += np.ones((self._num_samples, self._num_bases))*0.2
-
+        """Overwrite for initializing W."""
+        
     def _update_h(self):
         """Overwrite for updating H."""
 
@@ -214,7 +152,7 @@ class PyMFBase():
                 self._update_w()
 
             if compute_err:
-                self.ferr[i] = self.frobenius_norm()
+                self.ferr[i] = np.linalg.norm(self.data - np.dot(self.W, self.H), "fro")
                 self._logger.info(f"FN: {self.ferr[i]} ({i + 1} / {niter})")
             else:
                 self._logger.info(f"Iteration: ({i + 1} , {niter})")
