@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import os
-import sys
 
 import numpy as np
 import pytest
 
-sys.path.append("..")
-from sun_topicmodel.snmf import SNMF
+from sun_topicmodel import SNMF
 
 
 # Define fixtures or setup functions if necessary

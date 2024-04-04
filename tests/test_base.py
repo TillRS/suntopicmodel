@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import sys
-
 import numpy as np
 import pytest
 
-sys.path.append("..")
-from sun_topicmodel.base import PyMFBase
+from sun_topicmodel import PyMFBase
 
 
 # Define fixtures or setup functions if necessary

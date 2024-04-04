@@ -117,7 +117,7 @@ class PyMFBase:
                 iteratively update values for W.
         compute_err : bool
                 compute Frobenius norm |data-WH| after each update and store
-                it to .ferr[k]. Can be ommitted for speed.
+                it to .ferr[k]. Can be omitted for speed.
 
         Updated Values
         --------------
