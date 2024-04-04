@@ -6,8 +6,8 @@ build-backend = "hatchling.build"
 only-include = ["src/sun_topicmodel", "scripts"]  # Correct placement
 
 [tool.hatch.build.targets.wheel.sources]
-"src" = ""
-"scripts" = "sun_topicmodel/scripts"
+"src" = "src"
+"scripts" = "src/sun_topicmodel/scripts"
 
 [project]
 name = "sun_topicmodel"
@@ -15,8 +15,13 @@ version = "0.0.1"
 authors = [
   { name="Till Raphael Saenger", email="till.saenger@gmail.com" },
 ]
-description = "A package for the SUN topic model"
+description = "A Python package for the SUN topic model"
 requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "scikit-learn>=1.2.0"
+]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -26,6 +31,11 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/tillrs/sun_topicmodel"
 Issues = "https://github.com/tillrs/sun_topicmodel/issues"
+
+[project.optional-dependencies]
+tests = [
+    "pytest-cov>=2.9.0"
+]
 
 [tool.ruff]
 select = [
