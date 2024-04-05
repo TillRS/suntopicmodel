@@ -1,2 +1,4 @@
+# Required packages and versions to match the specific data in test_snmf.py
 pytest 
+numpy == 1.24.3
 scikit-learn == 1.2.2
