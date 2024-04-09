@@ -8,7 +8,6 @@ import pytest
 from sun_topicmodel import SNMF
 
 
-# Define fixtures or setup functions if necessary
 @pytest.fixture()
 def sample_data():
     # Example sample data

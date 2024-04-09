@@ -27,7 +27,7 @@ _EPS = np.finfo(float).eps
 
 class PyMFBase:
     """
-    PyMF Base Class. Does nothing useful apart from poviding some basic methods.
+    PyMF Base Class. Does nothing useful apart from providing some basic methods.
     """
 
     # some small value
@@ -133,10 +133,10 @@ class PyMFBase:
 
         # create W and H if they don't already exist
         # -> any custom initialization to W,H should be done before
-        if not hasattr(self, "W") and compute_w:
+        if not hasattr(self, "W"):
             self._init_w()
 
-        if not hasattr(self, "H") and compute_h:
+        if not hasattr(self, "H"):
             self._init_h()
 
         if compute_err:

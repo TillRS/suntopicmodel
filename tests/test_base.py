@@ -6,7 +6,6 @@ import pytest
 from sun_topicmodel import PyMFBase
 
 
-# Define fixtures or setup functions if necessary
 @pytest.fixture()
 def sample_data():
     # Example sample data
