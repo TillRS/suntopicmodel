@@ -98,7 +98,7 @@ class PyMFBase:
     def factorize(
         self,
         niter=100,
-        show_progress=False,
+        verbose=False,
         compute_w=True,
         compute_h=True,
         compute_err=True,
@@ -109,7 +109,7 @@ class PyMFBase:
         ----------
         niter : int
                 number of iterations.
-        show_progress : bool
+        verbose : bool
                 print some extra information to stdout.
         compute_h : bool
                 iteratively update values for H.
@@ -126,7 +126,7 @@ class PyMFBase:
         .ferr : Frobenius norm |data-WH| for each iteration.
         """
 
-        if show_progress:
+        if verbose:
             self._logger.setLevel(logging.INFO)
         else:
             self._logger.setLevel(logging.ERROR)
