@@ -122,8 +122,8 @@ def test_hyperparam_cv():
     model = suntopic(Y, X, alpha= 0.5, num_bases=4)
     model.hyperparam_cv(alpha_range=[0.1, 0.5, 0.9], num_bases_range=[2, 4, 6], cv_folds=3, random_state=21, niter=10)
     assert model.cv_errors.shape == (3, 3, 3)
-    assert model.cv_alpha == [0.1, 0.5, 0.9]
-    assert model.cv_num_bases == [2, 4, 6]
+    assert model.cv_alpha_range == [0.1, 0.5, 0.9]
+    assert model.cv_num_base_range == [2, 4, 6]
     assert model.cv_folds == 3
     assert ((0<= model.cv_errors) & (model.cv_errors <= 1)).all()
     cv_errors = model.cv_errors
