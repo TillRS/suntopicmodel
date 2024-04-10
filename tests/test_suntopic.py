@@ -131,8 +131,8 @@ def test_hyperparam_cv():
     model_parallel = suntopic(Y, X, alpha= 0.5, num_bases=4)
     model_parallel.hyperparam_cv(alpha_range=[0.1, 0.5, 0.9], num_bases_range=[2, 4, 6], cv_folds=3, random_state=21, niter=10, parallel=True)
     assert model_parallel.cv_errors.shape == (3, 3, 3)
-    assert model_parallel.cv_alpha == [0.1, 0.5, 0.9]
-    assert model_parallel.cv_num_bases == [2, 4, 6]
+    assert model_parallel.cv_alpha_range == [0.1, 0.5, 0.9]
+    assert model_parallel.cv_num_base_range == [2, 4, 6]
     assert model_parallel.cv_folds == 3
     assert ((0<= model_parallel.cv_errors) & (model_parallel.cv_errors <= 1)).all()
     assert cv_errors.all() == model_parallel.cv_errors.all()
@@ -143,3 +143,14 @@ def test_cv_summary_without_fit(sample_X, sample_Y):
     model = suntopic(sample_Y, sample_X, alpha= 0.5, num_bases=4)
     with pytest.raises(ValueError):
         model.cv_summary() 
+
+def test_cv_mse_plot():
+    # Test cv_mse_plot method of suntopic instance
+    Y = np.random.rand(100)
+    X = np.random.rand(100, 200)
+    model = suntopic(Y, X, alpha= 0.5, num_bases=4)
+    with pytest.raises(ValueError):
+        model.cv_mse_plot()
+    model.hyperparam_cv(alpha_range=[0.1, 0.5, 0.9], num_bases_range=[2, 4, 6], cv_folds=3, random_state=21, niter=10)
+    fig = model.cv_mse_plot(return_plot=True) 
+    assert fig is not None
