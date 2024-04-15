@@ -46,9 +46,7 @@ class suntopic:
             raise ValueError(msg)
         if num_bases > X.shape[1]:
             msg = "Number of bases must be less than the dimensionality of X.shape[1]"
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
         if num_bases != int(num_bases):
             msg = "Number of bases must be an integer"
             raise ValueError(msg)
@@ -89,6 +87,11 @@ class suntopic:
         """
         Fit the suntopic model to the data.
         """
+
+        if niter < 1:
+            msg = "Number of iterations must be at least 1"
+            raise ValueError(msg)
+
         self.model.factorize(
             niter=niter,
             verbose=verbose,
@@ -144,6 +147,30 @@ class suntopic:
         """
         return self.model.H
 
+    def get_top_docs(self, topic, n_docs=10):
+        """
+        Get the index of the top n documents for a given topic.
+        """
+        if not hasattr(self.model, "W"):
+            msg = "Model has not been fitted yet. Call fit() first."
+            raise ValueError(msg)
+
+        if n_docs < 1:
+            msg = "Number of iterations must be at least 1"
+            raise ValueError(msg)
+        if n_docs != int(n_docs):
+            msg = "Number of iterations must be an integer"
+            raise ValueError(msg)
+        if n_docs > self.model.H.shape[1]:
+            msg = "Number of top documents must be less than the total number of documents"
+            raise ValueError(msg)
+
+        if topic < 0 or topic >= self.model.W.shape[1]:
+            msg = "Topic index out of bounds"
+            raise ValueError(msg)
+
+        return np.argsort(self.model.W[:, topic])[::-1][:n_docs]
+
     def summary(self):
         """
         Print a summary of the suntopic model.
@@ -162,6 +189,10 @@ class suntopic:
         print("Random initialization state: ", self.model.random_state)
         # print("Frobenius norm error: ", self.model.ferr)
         print("Prediction coefficients: ", self.model.H[:, -1])
+        print(
+            "In-sample MSE: ",
+            mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])),
+        )
         # print("Topics: ", self.model.W)
         # print("Coefficients: ", self.model.H)
 
@@ -232,9 +263,7 @@ class suntopic:
                 raise ValueError(msg)
             if num_bases > self.X.shape[1]:
                 msg = "Each number of bases must be less than the dimensionality of X.shape[1]"
-                raise ValueError(
-                    msg
-                )
+                raise ValueError(msg)
             if num_bases != int(num_bases):
                 msg = "Each number of bases must be an integer"
                 raise ValueError(msg)
@@ -324,9 +353,7 @@ class suntopic:
 
         if hasattr(self, "cv_errors") is False:
             msg = "Cross-validation errors have not been computed yet. Call hyperparam_cv() first."
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
         mean_cv_errors = np.mean(self.cv_errors, axis=2)
         min_idx = np.unravel_index(
@@ -358,9 +385,7 @@ class suntopic:
         """
         if hasattr(self, "cv_errors") is False:
             msg = "Cross-validation errors have not been computed yet. Call hyperparam_cv() first."
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
         rc("font", **{"family": "serif", "serif": ["Computer Modern"]})
         plt.rcParams["text.usetex"] = True

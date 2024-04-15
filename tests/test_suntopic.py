@@ -69,6 +69,21 @@ def test_fit(sample_X, sample_Y):
     assert (model.get_topics() == model.model.W).all()
 
 
+def test_get_top_docs_idx(sample_X, sample_Y):
+    # Test get_top_docs method of suntopic instance
+    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    model.fit(niter=10)
+    with pytest.raises(ValueError):
+        model.get_top_docs_idx(topic=10, n_docs=10)
+    with pytest.raises(ValueError):
+        model.get_top_docs_idx(topic=1, n_docs=10.5)
+    with pytest.raises(ValueError):
+        model.get_top_docs_idx(topic=1, n_docs=-5)
+    top_docs = model.get_top_docs_idx(topic=1, n_docs=10)
+    assert len(top_docs) == 10
+    assert np.allclose(top_docs, np.argsort(model.model.W[:, 1])[::-1][:10])
+
+
 @pytest.mark.parametrize("random_state", [None, 21])
 def test_save_load(sample_X, sample_Y, random_state):
     # Test save and load methods of suntopic instance
