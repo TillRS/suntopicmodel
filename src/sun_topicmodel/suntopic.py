@@ -147,14 +147,14 @@ class suntopic:
         """
         return self.model.H
 
-    def get_top_docs(self, topic, n_docs=10):
+    def get_top_docs_idx(self, topic, n_docs=10):
         """
         Get the index of the top n documents for a given topic.
         """
         if not hasattr(self.model, "W"):
             msg = "Model has not been fitted yet. Call fit() first."
             raise ValueError(msg)
-
+        
         if n_docs < 1:
             msg = "Number of iterations must be at least 1"
             raise ValueError(msg)
@@ -169,7 +169,8 @@ class suntopic:
             msg = "Topic index out of bounds"
             raise ValueError(msg)
 
-        return np.argsort(self.model.W[:, topic])[::-1][:n_docs]
+        top_docs_idx = np.argsort(self.model.W[:, topic])[::-1][:n_docs]
+        return top_docs_idx
 
     def summary(self):
         """
@@ -189,10 +190,7 @@ class suntopic:
         print("Random initialization state: ", self.model.random_state)
         # print("Frobenius norm error: ", self.model.ferr)
         print("Prediction coefficients: ", self.model.H[:, -1])
-        print(
-            "In-sample MSE: ",
-            mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])),
-        )
+        print("In-sample MSE: ", mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])))
         # print("Topics: ", self.model.W)
         # print("Coefficients: ", self.model.H)
 
@@ -412,3 +410,4 @@ class suntopic:
         else:
             plt.show()
             return None
+
