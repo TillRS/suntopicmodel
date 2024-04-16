@@ -193,7 +193,6 @@ class suntopic:
         print("In-sample MSE: ", mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])))
         # print("Topics: ", self.model.W)
         # print("Coefficients: ", self.model.H)
-
         return
 
     def save(self, filename):
