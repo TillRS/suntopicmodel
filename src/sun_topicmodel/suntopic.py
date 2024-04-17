@@ -288,7 +288,7 @@ class suntopic:
         )
         self.cv_random_state = random_state
 
-        kf = KFold(n_splits=cv_folds, random_state=self.cv_random_state, shuffle=True)
+        self._cv_kf = KFold(n_splits=cv_folds, random_state=self.cv_random_state, shuffle=True)
         self.cv_errors = (
             np.ones((len(num_bases_range), len(alpha_range), cv_folds)) * np.nan
         )
@@ -320,7 +320,7 @@ class suntopic:
         if parallel is False:
             for i, num_bases in enumerate(num_bases_range):
                 for j, alpha in enumerate(alpha_range):
-                    for k, (train_index, test_index) in enumerate(kf.split(self.Y)):
+                    for k, (train_index, test_index) in enumerate(self._cv_kf.split(self.Y)):
                         self.cv_errors[i, j, k] = predict_Y_mse(
                             self, k, alpha, num_bases, train_index, test_index
                         )
@@ -333,7 +333,7 @@ class suntopic:
                 )
                 for i, num_bases in enumerate(num_bases_range)
                 for j, alpha in enumerate(alpha_range)
-                for k, (train_index, test_index) in enumerate(kf.split(self.Y))
+                for k, (train_index, test_index) in enumerate(self._cv_kf.split(self.Y))
             )
             # Assign results back to cv_errors array
             idx = 0
