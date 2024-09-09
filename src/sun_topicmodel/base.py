@@ -67,6 +67,10 @@ class PyMFBase:
         self.random_state = random_state
         self._num_samples, self._data_dimension = self.data.shape
 
+        # initialize W and H
+        self._init_w()
+        self._init_h()
+
     def _init_h(self):
         """Overwrite for initializing H."""
 

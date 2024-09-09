@@ -88,9 +88,9 @@ class suntopic:
         Fit the suntopic model to the data.
         """
 
-        if niter < 1:
-            msg = "Number of iterations must be at least 1"
-            raise ValueError(msg)
+        # if niter < 1:
+        #     msg = "Number of iterations must be at least 1"
+        #     raise ValueError(msg)
 
         self.model.factorize(
             niter=niter,
@@ -121,8 +121,11 @@ class suntopic:
             raise ValueError(msg)
 
         data_new = np.sqrt(self.alpha) * X_new
+        data_new = np.hstack((data_new, np.zeros((data_new.shape[0], 1)))) # as there are no observations Y 
         self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
-        self._model_pred.H = self.model.H[:, :-1]
+        # self._model_pred.data = data_new[:, :-1] # remove the extra column
+        # self._model_pred.H = self.model.H[:, :-1]
+        self._model_pred.H = self.model.H
 
         self._model_pred.factorize(
             niter=niter, verbose=verbose, compute_h=False, compute_err=compute_err
@@ -301,6 +304,7 @@ class suntopic:
             train_index,
             test_index,
             random_state=self.cv_random_state,
+            niter=niter,
         ):
             model = suntopic(
                 Y=self.Y[train_index],
@@ -310,7 +314,10 @@ class suntopic:
                 random_state=random_state,
             )
             model.fit(niter=niter, verbose=False)
-            Y_pred = model.predict(self.X[test_index], random_state=random_state)
+            Y_pred = model.predict(self.X[test_index], random_state=random_state, niter=niter)
+            # print(f"Y_pred: {Y_pred}, Y: {self.Y[test_index]}")
+            # print("X_train: ", self.X[train_index])
+            # print(f"X_test: {self.X[test_index]}")
             mse = mean_squared_error(self.Y[test_index], Y_pred)
             self._logger.info(
                 f"Alpha: {alpha}, Num bases: {num_bases}, Fold: {k}, MSE: {mse}"
@@ -324,6 +331,7 @@ class suntopic:
                         self.cv_errors[i, j, k] = predict_Y_mse(
                             self, k, alpha, num_bases, train_index, test_index
                         )
+        
         else:
             # Sequentially loop over alpha_ranges and parallelize across topic_range
             num_cores = -1 if len(alpha_range) > 1 else 1  # Use all available cores
@@ -397,7 +405,7 @@ class suntopic:
                 label=f"{num_bases} topics",
                 marker="o",
             )
-        ax.set_xlabel(r"$\alpha$")
+        ax.set_xlabel("alpha")
         ax.set_ylabel("MSE")
         ax.set_title(title)
         ax.legend()

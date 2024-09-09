@@ -79,8 +79,12 @@ class SNMF(PyMFBase):
 
         def separate_negative(m):
             return (np.abs(m) - m) / 2.0
-
-        XH = np.dot(self.data, self.H.T)
+        
+        # check dimensionality, for predictions, data will have one column less
+        if self.data.shape[1] == self.H.shape[1]:
+            XH = np.dot(self.data, self.H.T)
+        else:
+            XH = np.dot(self.data, self.H[:,:-1].T)   
 
         HH = np.dot(self.H, self.H.T)
         HH_pos = separate_positive(HH)
