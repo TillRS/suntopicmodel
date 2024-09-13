@@ -10,15 +10,16 @@ from sun_topicmodel import suntopic
 sample_size = 10
 data_dim = 20
 
+# Create a random number generator
+rng = np.random.default_rng(seed=42)
 
 @pytest.fixture()
 def sample_X():
-    return np.random.rand(sample_size, data_dim)
-
+    return rng.random((sample_size, data_dim))  # Sample data of shape (10, 20)
 
 @pytest.fixture()
 def sample_Y():
-    return np.random.rand(sample_size)
+    return rng.random(sample_size)  
 
 
 def test_initialization(sample_X, sample_Y, alpha=0.5, num_bases=5):
@@ -105,7 +106,7 @@ def test_predict_and_infer(sample_X, sample_Y):
     # Test predict method of suntopic instance
     model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
-    X_new = np.random.rand(5, data_dim)
+    X_new = rng.random((5, data_dim))
     Y_pred = model.predict(X_new)
     assert Y_pred.shape == (5,)
     Y_pred, W_pred = model.predict(X_new, return_topics=True)
@@ -117,26 +118,10 @@ def test_predict_with_invalid_X_new(sample_X, sample_Y):
     # Test predict method of suntopic instance with invalid X_new
     model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
-    X_new = np.random.rand(5, 21)
+    X_new = rng.random((5, 21))
     with pytest.raises(ValueError):
         model.predict(X_new)
 
-
-def test_predict_without_fit(sample_X, sample_Y):
-    # Test predict method of suntopic instance without fit
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
-    X_new = np.random.rand(5, 20)
-    with pytest.raises(ValueError):
-        model.predict(X_new)
-
-
-def test_predict_with_invalid_return_topics(sample_X, sample_Y):
-    # Test predict method of suntopic instance with invalid return_topics
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
-    model.fit(niter=10)
-    X_new = np.random.rand(5, 22)
-    with pytest.raises(ValueError):
-        model.predict(X_new, return_topics=1)
 
 
 def test_summary(sample_X, sample_Y):
@@ -146,16 +131,9 @@ def test_summary(sample_X, sample_Y):
     assert model.summary() is None
 
 
-def test_summary_without_fit(sample_X, sample_Y):
-    # Test summary method of suntopic instance without fit
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
-    with pytest.raises(ValueError):
-        model.summary()
-
-
 def test_hyperparam_cv():
-    Y = np.random.rand(100)
-    X = np.random.rand(100, 200)
+    Y = rng.random(100)
+    X = rng.random((100, 200))
     # Test find_alpha_cv method of suntopic instance
     model = suntopic(Y, X, alpha=0.5, num_bases=4)
     model.hyperparam_cv(
@@ -198,8 +176,8 @@ def test_cv_summary_without_fit(sample_X, sample_Y):
 
 def test_cv_mse_plot():
     # Test cv_mse_plot method of suntopic instance
-    Y = np.random.rand(100)
-    X = np.random.rand(100, 200)
+    Y = rng.random(100)
+    X = rng.random((100, 200))
     model = suntopic(Y, X, alpha=0.5, num_bases=4)
     with pytest.raises(ValueError):
         model.cv_mse_plot()

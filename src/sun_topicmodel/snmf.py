@@ -7,7 +7,8 @@ Semi Non-negative Matrix Factorization.
 IEEE Trans. on Pattern Analysis and Machine Intelligence 32(1), 45-55.
 
 Authors: Till R. Saenger, ORFE Princeton
-Notes: This implementation builds directly on an unsupported implementation of
+
+Note: This implementation builds directly on an unsupported implementation of
 Christian Thurau (https://github.com/pzoccante/pymf/blob/master/pymf/)
 
 """
@@ -59,7 +60,7 @@ class SNMF(PyMFBase):
             init="k-means++",
         ).fit(self.data)
         assign = km.labels_
-        self._logger.info(f"SNMF - Initial Assignment: {assign}")
+        self._logger.info("SNMF - Initial Assignment: %s", assign)
 
         num_i = np.zeros(self._num_bases)
         for i in range(self._num_bases):
@@ -79,12 +80,12 @@ class SNMF(PyMFBase):
 
         def separate_negative(m):
             return (np.abs(m) - m) / 2.0
-        
+
         # check dimensionality, for predictions, data will have one column less
         if self.data.shape[1] == self.H.shape[1]:
             XH = np.dot(self.data, self.H.T)
         else:
-            XH = np.dot(self.data, self.H[:,:-1].T)   
+            XH = np.dot(self.data, self.H[:, :-1].T)
 
         HH = np.dot(self.H, self.H.T)
         HH_pos = separate_positive(HH)

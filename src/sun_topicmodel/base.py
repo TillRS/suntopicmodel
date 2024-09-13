@@ -1,9 +1,8 @@
 """
-Base class for all PyMF classes
-which we use for convex and semi-nonnegative matrix factorization.
+Base class for all SNMF class
+which we use for semi-nonnegative matrix factorization from [1].
 
 Authors: Till R. Saenger, ORFE Princeton
-
 
 Notes:
 
@@ -155,9 +154,9 @@ class PyMFBase:
 
             if compute_err:
                 self.ferr[i] = np.linalg.norm(self.data - np.dot(self.W, self.H), "fro")
-                self._logger.info(f"FN: {self.ferr[i]} ({i + 1} / {niter})")
+                self._logger.info("FN: %s (%s / %s)", self.ferr[i], i + 1, niter)
             else:
-                self._logger.info(f"Iteration: ({i + 1} , {niter})")
+                self._logger.info("Iteration: (%s, %s)", i + 1, niter)
 
             # check if the err is not changing anymore
             if i > 1 and compute_err and self._converged(i):

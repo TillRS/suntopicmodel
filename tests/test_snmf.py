@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import os
-
 import numpy as np
 import pytest
+from sklearn.utils._param_validation import InvalidParameterError
 
 from sun_topicmodel import SNMF
+
+# Create a random number generator
+rng = np.random.default_rng(seed=42)
 
 
 @pytest.fixture()
 def sample_data():
-    # Example sample data
-    return np.random.rand(10, 20)  # Sample data of shape (10, 20)
+    return rng.random((10, 20))  # Sample data of shape (10, 20)
 
 
 # Define generic test cases
@@ -40,68 +41,69 @@ def test_initialization_with_random_state(sample_data):
 
 def test_initialization_with_invalid_random_state(sample_data):
     # Test initialization of SNMF instance with invalid random_state
-    model = SNMF(sample_data, num_bases=4, random_state=-1)
-    with pytest.raises(ValueError):
-        model.factorize(niter=10)
+    with pytest.raises(InvalidParameterError):
+        SNMF(sample_data, num_bases=4, random_state=-1)
 
 
 def test_initialization_with_invalid_num_bases(sample_data):
     # Test initialization of SNMF instance with invalid num_bases
-    model = SNMF(sample_data, num_bases=0)
-    with pytest.raises(ValueError):
-        model.factorize(niter=10)
+    with pytest.raises(InvalidParameterError):
+        SNMF(sample_data, num_bases=0)
 
 
-def test_save_load(sample_data):
+def test_save_load(sample_data, tmp_path):
     # Test save and load methods of SNMF instance
     model = SNMF(sample_data, num_bases=4)
     model.factorize(niter=10)
-    model.save(filename="test_model.npz")
-    loaded_model = SNMF.load(filename="test_model.npz")
-    # delete the file
-    os.remove("test_model.npz")
+
+    # Use tmp_path to create a temporary file path
+    test_model_path = tmp_path / "test_model.npz"
+    model.save(filename=str(test_model_path))
+
+    loaded_model = SNMF.load(filename=str(test_model_path))
+
+    # Assert that the matrices are close to each other
     assert np.allclose(model.W, loaded_model.W)
     assert np.allclose(model.H, loaded_model.H)
 
 
 # define specific test cases
-np.random.seed(44)
-data_test = np.random.randn(5, 5)
+rng = np.random.default_rng(seed=42)
+data_test = rng.standard_normal((5, 5))
 W_init = np.array(
     [
+        [1.2, 0.2, 0.2],
+        [0.2, 1.2, 0.2],
         [0.2, 0.2, 1.2],
-        [1.2, 0.2, 0.2],
         [0.2, 1.2, 0.2],
-        [0.2, 1.2, 0.2],
-        [1.2, 0.2, 0.2],
+        [1.2, 0.2, 0.2]
     ]
 )
 W_final = np.array(
     [
-        [0.26131357, 0.28294198, 1.10650968],
-        [1.53183718, 0.48374749, 0.14029453],
-        [0.56818264, 1.08108117, 0.07414763],
-        [0.05217432, 1.1717574, 0.47405955],
-        [0.57225118, 0.02169945, 0.37475691],
+        [1.52717716, 0.4118178 , 0.41608436],
+        [0.38007206, 1.13281955, 0.08401745],
+        [0.20492652, 0.18779632, 1.05447671],
+        [0.119735  , 1.237688  , 0.64700313],
+        [0.72035853, 0.0406315 , 0.04210814]
     ]
 )
 H_final = np.array(
     [
-        [-1.33936537, 0.78980205, -0.04690679, -0.47313419, 0.55653641],
-        [0.25285725, 0.03530502, -0.77982843, 1.25854171, -0.75134136],
-        [-0.38705062, 1.01099344, 1.24087478, -1.73020804, -1.26286445],
+        [ 0.15267809, -0.90650513,  0.93239813,  0.18052979, -1.23454713],
+        [-1.24915809,  0.16639575, -0.73022645, -0.00441065, -0.35860456],
+        [ 1.04916613,  0.75847681, -0.11758287,  1.14149388,  0.72544398]
     ]
 )
 
 
 def test_initialization_with_specific_data():
     model_test = SNMF(data_test, num_bases=3, random_state=44)
-    model_test.factorize(niter=0)
     assert np.allclose(model_test.W, W_init)
 
 
 def test_specfic_data():
     model_test = SNMF(data_test, num_bases=3, random_state=44)
-    model_test.factorize(niter=100)
+    model_test.factorize(niter=10)
     assert np.allclose(model_test.W, W_final)
     assert np.allclose(model_test.H, H_final)

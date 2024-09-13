@@ -5,11 +5,13 @@ import pytest
 
 from sun_topicmodel import PyMFBase
 
+# Create a random number generator
+rng = np.random.default_rng(seed=42)
+
 
 @pytest.fixture()
 def sample_data():
-    # Example sample data
-    return np.random.rand(10, 20)  # Sample data of shape (10, 20)
+    return rng.random((10, 20))  # Sample data of shape (10, 20)
 
 
 # Define generic test cases
@@ -31,4 +33,4 @@ def test_initialization_with_random_state(sample_data):
 def test_initialization_with_invalid_data():
     # Test initialization of PyMFBase instance with invalid data
     with pytest.raises(ValueError):
-        PyMFBase(np.random.rand(10, 20, 30), num_bases=4)
+        PyMFBase(rng.random((10, 20, 30)), num_bases=4)

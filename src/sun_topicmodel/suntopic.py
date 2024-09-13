@@ -5,7 +5,7 @@ SUN Topic Model
 
 Authors: Till R. Saenger, ORFE Princeton
 
-[1] Saenger, Hinck, Grimmer, and Stewart. AutoPersuade:
+[Citation TBD]
 
 """
 
@@ -31,7 +31,7 @@ class suntopic:
 
     """
 
-    def __init__(self, Y, X, alpha, num_bases, random_state=None, **kwargs):
+    def __init__(self, Y, X, alpha, num_bases, random_state=None):
         """
         Initialize the suntopic class.
         data : array_like, shape (_num_samples, _data_dimension)
@@ -73,12 +73,14 @@ class suntopic:
         self.X = X
         self.num_bases = num_bases
         self.alpha = alpha
+        self._niter = 0
 
         data = np.hstack(
             (np.sqrt(alpha) * X, np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1))
         )
+        np.hstack((np.sqrt(alpha) * X, np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1)))
         self.data = data
-        self.model = SNMF(data, num_bases)
+        self.model = SNMF(data, num_bases, random_state=random_state)
         self.model.random_state = random_state
 
     def fit(
@@ -87,10 +89,7 @@ class suntopic:
         """
         Fit the suntopic model to the data.
         """
-
-        # if niter < 1:
-        #     msg = "Number of iterations must be at least 1"
-        #     raise ValueError(msg)
+        self._niter = niter
 
         self.model.factorize(
             niter=niter,
@@ -121,10 +120,10 @@ class suntopic:
             raise ValueError(msg)
 
         data_new = np.sqrt(self.alpha) * X_new
-        data_new = np.hstack((data_new, np.zeros((data_new.shape[0], 1)))) # as there are no observations Y 
+        data_new = np.hstack(
+            (data_new, np.zeros((data_new.shape[0], 1)))
+        )  # as there are no observations Y
         self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
-        # self._model_pred.data = data_new[:, :-1] # remove the extra column
-        # self._model_pred.H = self.model.H[:, :-1]
         self._model_pred.H = self.model.H
 
         self._model_pred.factorize(
@@ -135,8 +134,7 @@ class suntopic:
         Y_pred /= np.sqrt(1 - self.alpha)
         if return_topics is False:
             return Y_pred
-        else:
-            return Y_pred, self._model_pred.W
+        return Y_pred, self._model_pred.W
 
     def get_topics(self):
         """
@@ -157,7 +155,7 @@ class suntopic:
         if not hasattr(self.model, "W"):
             msg = "Model has not been fitted yet. Call fit() first."
             raise ValueError(msg)
-        
+
         if n_docs < 1:
             msg = "Number of iterations must be at least 1"
             raise ValueError(msg)
@@ -172,30 +170,29 @@ class suntopic:
             msg = "Topic index out of bounds"
             raise ValueError(msg)
 
-        top_docs_idx = np.argsort(self.model.W[:, topic])[::-1][:n_docs]
-        return top_docs_idx
+        return np.argsort(self.model.W[:, topic])[::-1][:n_docs]
 
     def summary(self):
         """
         Print a summary of the suntopic model.
         """
 
-        if not hasattr(self.model, "H"):
-            msg = "Model has not been fitted yet. Call fit() first."
-            raise ValueError(msg)
-
         print("Suntopic Model Summary")
         print("=" * 50)
         print("Number of topics: ", self.num_bases)
         print("Alpha: ", self.alpha)
         print("Data shape: ", self.data.shape)
-        print("Model: ", self.model)
+        print("Number of iterations of model fit: ", self._niter)
         print("Random initialization state: ", self.model.random_state)
-        # print("Frobenius norm error: ", self.model.ferr)
+        print(
+            "Frobenius norm error: ",
+            np.linalg.norm(self.data - self.model.W @ self.model.H),
+        )
+        print(
+            "In-sample MSE: ",
+            mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])),
+        )
         print("Prediction coefficients: ", self.model.H[:, -1])
-        print("In-sample MSE: ", mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])))
-        # print("Topics: ", self.model.W)
-        # print("Coefficients: ", self.model.H)
         return
 
     def save(self, filename):
@@ -291,7 +288,9 @@ class suntopic:
         )
         self.cv_random_state = random_state
 
-        self._cv_kf = KFold(n_splits=cv_folds, random_state=self.cv_random_state, shuffle=True)
+        self._cv_kf = KFold(
+            n_splits=cv_folds, random_state=self.cv_random_state, shuffle=True
+        )
         self.cv_errors = (
             np.ones((len(num_bases_range), len(alpha_range), cv_folds)) * np.nan
         )
@@ -314,24 +313,26 @@ class suntopic:
                 random_state=random_state,
             )
             model.fit(niter=niter, verbose=False)
-            Y_pred = model.predict(self.X[test_index], random_state=random_state, niter=niter)
-            # print(f"Y_pred: {Y_pred}, Y: {self.Y[test_index]}")
-            # print("X_train: ", self.X[train_index])
-            # print(f"X_test: {self.X[test_index]}")
+            Y_pred = model.predict(
+                self.X[test_index], random_state=random_state, niter=niter
+            )
             mse = mean_squared_error(self.Y[test_index], Y_pred)
             self._logger.info(
-                f"Alpha: {alpha}, Num bases: {num_bases}, Fold: {k}, MSE: {mse}"
-            )  # currently does not work for parallel
+                "Alpha: %s, Num bases: %s, Fold: %s, MSE: %s", alpha, num_bases, k, mse
+            )
+            # currently does not work for parallel
             return mse
 
         if parallel is False:
             for i, num_bases in enumerate(num_bases_range):
                 for j, alpha in enumerate(alpha_range):
-                    for k, (train_index, test_index) in enumerate(self._cv_kf.split(self.Y)):
+                    for k, (train_index, test_index) in enumerate(
+                        self._cv_kf.split(self.Y)
+                    ):
                         self.cv_errors[i, j, k] = predict_Y_mse(
                             self, k, alpha, num_bases, train_index, test_index
                         )
-        
+
         else:
             # Sequentially loop over alpha_ranges and parallelize across topic_range
             num_cores = -1 if len(alpha_range) > 1 else 1  # Use all available cores
@@ -414,7 +415,5 @@ class suntopic:
             ax.legend()
         if return_plot:
             return fig
-        else:
-            plt.show()
-            return None
-
+        plt.show()
+        return None
