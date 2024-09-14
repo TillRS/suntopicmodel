@@ -1,8 +1,8 @@
 # SUN_TopicModel
 Python implementation of the SUpervised Nonnegative matrix factorization (SUN) topic model for topic discovery and effect estimation from \[CITATION TBD].
 
-## Installation
-To install this package, clone the repository and install it using pip.
+## Installation 
+To install this package, clone the repository and install it using pip. 
 The current setup requires manual installation of the dependencies or using the `suntopic_env.yml` to create an environment.
 ```bash
 git clone https://github.com/TillRS/SUN_TopicModel
@@ -11,15 +11,15 @@ conda env create -f suntopic_env.yml
 pip install .
 ```
 
-## Usage
+## Usage 
 Refer to the `sample.ipynb` notebook for a demonstration of the usage of this package.
 
 ## Structure
-#### Package:
+#### Package: 
 - **`__init__.py`:** initializes the package.
 - **`base.py`:** Sets up the base class `PyMFBase` for matrix factorization following the implementation of [1].
 - **`snmf.py`:** Defines the semi-nonnegative matrix factorization class `SNMF` of [2] building on the implementation of [1].
-- **`suntopic.py`:** Defines the topic model class using the `SNMF` class including the features:
+- **`suntopic.py`:** Defines the topic model class using the `SNMF` class including the features: 
     - Model Initialization: Allows for flexible configuration of the alpha parameter and the number of topics.
     - Fit Functionality: Implements the fitting of SNMF models using an iterative approach.
     - Cross-Validation for Hyperparameter Tuning: Provides support for cross-validation on both alpha and num_bases
@@ -35,13 +35,13 @@ The main parameters of the topic model are:
 - `num_bases` (int, optional): The number of basis vectors (topics). Default is 5. Must be a positive integer
 - `random_state` (int, optional): A random seed for reproducibility. Default is None.
 
-#### Testing
+#### Testing 
 Pytest test functions for the different class objects are collected in:
 - **`test_base.py`:** Tests for base matrix factorization class.
 - **`test_snmf.py`:** Tests for semi-nonnegative matrix factorization implementation.
 - **`test_tuntopic.py`:** Tests for topic modeling functionalities.
 
-## Dependencies and setup
+## Dependencies and setup 
 - Relevant dependencies are currently **excluded** from `pyproject.toml`.
  - Recreating the results of our paper requires a specific sciki-learn version and whenever I set it as a general dependency (without specifying the specific version), it updates and affects the results. Hence, I have for now excluded the dependencies. They should include:
     - numpy
@@ -50,18 +50,19 @@ Pytest test functions for the different class objects are collected in:
     - joblib
     - pytest
     - ipykernel (for the sample notebook)
+    - statsmodels (for the sample notebook)
 
-- The CI setup is included in `ci_requirements.txt`.
+- The CI setup is included in `ci_requirements.txt`. 
 - A python environment for testing is included in `suntopic_env.yml`.
 
 
-## Acknowledgements
+## Acknowledgements 
 
 This implementation builds directly on the relevant parts of [1]:
 - https://github.com/cthurau/pymf.
 
-The semi-nonnegative matrix factorization approach was developed by [2]:
-- C. H. Q. Ding, T. Li and M. I. Jordan, "Convex and Semi-Nonnegative Matrix Factorizations," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 32, no. 1, pp. 45-55, Jan. 2010, doi: 10.1109/TPAMI.2008.277.
+The semi-nonnegative matrix factorization approach was developed by [2]: 
+- C. H. Q. Ding, T. Li and M. I. Jordan, "Convex and Semi-Nonnegative Matrix Factorizations," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 32, no. 1, pp. 45-55, Jan. 2010, doi: 10.1109/TPAMI.2008.277. 
 
 
 
