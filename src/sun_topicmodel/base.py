@@ -104,7 +104,9 @@ class PyMFBase:
         verbose=False,
         compute_w=True,
         compute_h=True,
-        compute_err=True,
+        compute_err=False,
+        compute_topic_err=False,
+        topic_err_tol=10**-2,
     ):
         """Factorize s.t. WH = data
 
@@ -121,6 +123,11 @@ class PyMFBase:
         compute_err : bool
                 compute Frobenius norm |data-WH| after each update and store
                 it to .ferr[k]. Can be omitted for speed.
+        compute_topic_err : bool
+                compute the L2 norm for each row of W and W_old, and get the maximum difference.
+                Can be omitted for speed.
+        topic_err_tol : float
+                tolerance for the maximum difference of the L2 norm of W and W_old before stopping the iteration.
 
         Updated Values
         --------------
@@ -144,23 +151,36 @@ class PyMFBase:
 
         if compute_err:
             self.ferr = np.zeros(niter)
+        
+        if compute_topic_err:
+            self.topic_err = np.zeros(niter)
 
         for i in range(niter):
             if compute_h:
                 self._update_h()
 
             if compute_w:
+                W_old = self.W.copy()
                 self._update_w()
 
             if compute_err:
                 self.ferr[i] = np.linalg.norm(self.data - np.dot(self.W, self.H), "fro")
                 self._logger.info("FN: %s (%s / %s)", self.ferr[i], i + 1, niter)
+            if compute_topic_err: 
+                # Calculate the L2 norm for each row of W and W_old, and get the maximum difference
+                # self.topic_err[i] = np.max(np.abs(self.W - W_old))
+                self.topic_err[i] = np.max(np.linalg.norm(self.W - W_old, axis=1))
+                self._logger.info("W (Max Doc Update): %s (%s / %s)", self.topic_err[i], i + 1, niter)
             else:
                 self._logger.info("Iteration: (%s, %s)", i + 1, niter)
 
             # check if the err is not changing anymore
             if i > 1 and compute_err and self._converged(i):
                 self.ferr = self.ferr[:i]
+                break
+        
+            if i > 1 and compute_topic_err and self.topic_err[i] < topic_err_tol:
+                self.topic_err = self.topic_err[:i]
                 break
 
     # Define a save method to export self.W and self.H

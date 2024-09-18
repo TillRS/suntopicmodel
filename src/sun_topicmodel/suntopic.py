@@ -106,7 +106,10 @@ class suntopic:
         niter=100,
         random_state=None,
         verbose=False,
-        compute_err=True,
+        compute_err=False,
+        compute_topic_err = True,
+        topic_err_tol = 1e-3
+
     ):
         """
         Predict the response variable for new data X_new.
@@ -127,7 +130,12 @@ class suntopic:
         self._model_pred.H = self.model.H
 
         self._model_pred.factorize(
-            niter=niter, verbose=verbose, compute_h=False, compute_err=compute_err
+            niter=niter, 
+            verbose=verbose, 
+            compute_h=False, 
+            compute_err=compute_err, 
+            compute_topic_err=compute_topic_err, 
+            topic_err_tol=topic_err_tol
         )
 
         Y_pred = np.dot(self._model_pred.W, self.model.H[:, -1])
@@ -245,6 +253,9 @@ class suntopic:
         parallel=False,
         verbose=False,
         niter=100,
+        pred_niter=100,
+        compute_topic_err=True,
+        topic_err_tol=1e-2
     ):
         """
         Calculate the cross-validated mean squared error for different values of alpha and num_bases.
@@ -314,7 +325,12 @@ class suntopic:
             )
             model.fit(niter=niter, verbose=False)
             Y_pred = model.predict(
-                self.X[test_index], random_state=random_state, niter=niter
+                self.X[test_index], 
+                random_state=random_state, 
+                niter=pred_niter, 
+                compute_err=False, 
+                compute_topic_err=compute_topic_err,
+                topic_err_tol=topic_err_tol
             )
             mse = mean_squared_error(self.Y[test_index], Y_pred)
             self._logger.info(
