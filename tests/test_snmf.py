@@ -54,7 +54,7 @@ def test_initialization_with_invalid_num_bases(sample_data):
 def test_save_load(sample_data, tmp_path):
     # Test save and load methods of SNMF instance
     model = SNMF(sample_data, num_bases=4)
-    model.factorize(niter=10)
+    model.factorize(niter=10, compute_err=True)
 
     # Use tmp_path to create a temporary file path
     test_model_path = tmp_path / "test_model.npz"
@@ -98,12 +98,12 @@ H_final = np.array(
 
 
 def test_initialization_with_specific_data():
-    model_test = SNMF(data_test, num_bases=3, random_state=44)
+    model_test = SNMF(data_test, num_bases=3, random_state=44, compute_err=True)
     assert np.allclose(model_test.W, W_init)
 
 
 def test_specfic_data():
-    model_test = SNMF(data_test, num_bases=3, random_state=44)
+    model_test = SNMF(data_test, num_bases=3, random_state=44, compute_err=True)
     model_test.factorize(niter=10)
     assert np.allclose(model_test.W, W_final)
     assert np.allclose(model_test.H, H_final)
