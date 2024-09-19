@@ -62,6 +62,10 @@ class PyMFBase:
 
         # set variables
         self.data = data
+        # Check if data is a vector (1-dimensional array)
+        if self.data.ndim == 1:
+            # Convert it to a 2D array
+            self.data = self.data.reshape(1, -1)
         self._num_bases = num_bases
         self.random_state = random_state
         self._num_samples, self._data_dimension = self.data.shape

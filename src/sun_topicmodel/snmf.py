@@ -53,21 +53,25 @@ class SNMF(PyMFBase):
     def _init_w(self):
         """Initialize W using k-means ++"""
         self.W = np.zeros((self._num_samples, self._num_bases))
-        km = KMeans(
-            n_clusters=self._num_bases,
-            random_state=self.random_state,
-            n_init="auto",
-            init="k-means++",
-        ).fit(self.data)
-        assign = km.labels_
-        self._logger.info("SNMF - Initial Assignment: %s", assign)
+        if self.data.shape[0] >= self._num_bases:
+            km = KMeans(
+                n_clusters=self._num_bases,
+                random_state=self.random_state,
+                n_init="auto",
+                init="k-means++",
+            ).fit(self.data)
+            assign = km.labels_
+            self._logger.info("SNMF - Initial Assignment: %s", assign)
 
-        num_i = np.zeros(self._num_bases)
-        for i in range(self._num_bases):
-            num_i[i] = len(np.where(assign == i)[0])
+            num_i = np.zeros(self._num_bases)
+            for i in range(self._num_bases):
+                num_i[i] = len(np.where(assign == i)[0])
 
-        self.W[range(len(assign)), assign] = 1.0
-        self.W += np.ones((self._num_samples, self._num_bases)) * 0.2
+            self.W[range(len(assign)), assign] = 1.0
+            self.W += np.ones((self._num_samples, self._num_bases)) * 0.2
+
+        else:
+            self.W = np.ones((self._num_samples, self._num_bases)) * 0.2
 
     def _update_h(self):
         H1 = np.dot(self.W.T, self.W)
