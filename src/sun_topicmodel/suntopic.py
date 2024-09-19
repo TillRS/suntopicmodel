@@ -114,6 +114,10 @@ class suntopic:
         """
         Predict the response variable for new data X_new.
         """
+        # Reshape singular observation to matrix
+        if X_new.ndim == 1:
+            X_new = X_new.reshape(1, -1)
+
         if X_new.shape[1] != self.X.shape[1]:
             msg = "X_new.shape[1] must be equal to X.shape[1]"
             raise ValueError(msg)
@@ -123,11 +127,11 @@ class suntopic:
             raise ValueError(msg)
 
         data_new = np.sqrt(self.alpha) * X_new
-        data_new = np.hstack(
-            (data_new, np.zeros((data_new.shape[0], 1)))
-        )  # as there are no observations Y
+        # data_new = np.hstack(
+        #     (data_new, np.zeros((data_new.shape[0], 1)))
+        # )  # as there are no observations Y
         self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
-        self._model_pred.H = self.model.H
+        self._model_pred.H = self.model.H[:,:-1]
 
         self._model_pred.factorize(
             niter=niter, 
