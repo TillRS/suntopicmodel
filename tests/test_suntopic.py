@@ -123,6 +123,14 @@ def test_predict_with_invalid_X_new(sample_X, sample_Y):
         model.predict(X_new)
 
 
+def test_predict_with_single_X_new(sample_X, sample_Y):
+    # Test predict method of suntopic instance with invalid X_new
+    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    model.fit(niter=10)
+    X_new = rng.random((5, 20))
+    Y_pred = model.predict(X_new[0, :])
+    assert Y_pred.shape == (1,)
+
 
 def test_summary(sample_X, sample_Y):
     # Test summary method of suntopic instance
