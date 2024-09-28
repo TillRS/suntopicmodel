@@ -69,6 +69,22 @@ def test_fit(sample_X, sample_Y):
     assert (model.get_coefficients() == model.model.H).all()
     assert (model.get_topics() == model.model.W).all()
 
+def test_fit_standardization(sample_X, sample_Y):
+    # Test fit method of suntopic instance with standardization
+    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    model.fit(niter=10, standardize=True)
+    # Ensure that the standard deviation is approximately 1 after standardization
+    coefficients_std = np.std(model.get_topics(), axis=0)  # Added () to method call
+    assert np.allclose(coefficients_std, 1, atol=1e-1), "Standardized coefficients should have a standard deviation of approximately 1"
+
+def test_fit_no_standardization(sample_X, sample_Y):
+    # Test fit method of suntopic instance without standardization
+    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    model.fit(niter=10, standardize=False)
+    # Ensure that the standard deviation is not approximately 1 when standardization is off
+    coefficients_std = np.std(model.get_topics(), axis=0)  # Added () to method call
+    assert not np.allclose(coefficients_std, 1, atol=1e-1), "Non-standardized coefficients should not have a standard deviation close to 1"
+
 
 def test_get_top_docs_idx(sample_X, sample_Y):
     # Test get_top_docs method of suntopic instance

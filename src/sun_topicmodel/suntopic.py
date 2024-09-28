@@ -26,7 +26,7 @@ from sklearn.model_selection import KFold
 from sun_topicmodel.snmf import SNMF
 
 
-class suntopic:
+class suntopic(SNMF):
     """
     suntopic(data, num_bases)
 
@@ -86,7 +86,7 @@ class suntopic:
         self.model.random_state = random_state
 
     def fit(
-        self, niter=100, verbose=False, compute_w=True, compute_h=True, compute_err=True
+        self, niter=100, verbose=False, compute_w=True, compute_h=True, compute_err=True, standardize = True
     ):
         """
         Fit the suntopic model to the data.
@@ -100,6 +100,12 @@ class suntopic:
             compute_h=compute_h,
             compute_err=compute_err,
         )
+
+        if standardize:
+            S = np.diag(np.std(self.model.W, axis=0))
+            self.model.W = np.dot(self.model.W, np.linalg.inv(S))
+            self.model.H = np.dot(S, self.model.H)
+
 
     def predict(
         self,
