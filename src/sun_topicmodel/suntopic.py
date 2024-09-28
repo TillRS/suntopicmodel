@@ -16,6 +16,8 @@ import logging.config
 
 import matplotlib.pyplot as plt
 import numpy as np
+import cvxpy as cp
+from tqdm import tqdm
 from joblib import Parallel, delayed
 from matplotlib import rc
 from sklearn.metrics import mean_squared_error
@@ -108,7 +110,10 @@ class suntopic:
         verbose=False,
         compute_err=False,
         compute_topic_err = True,
-        topic_err_tol = 1e-3
+        topic_err_tol = 1e-3,
+        cvxpy = False,
+        solver = 'ECOS',
+        old = False
 
     ):
         """
@@ -125,28 +130,68 @@ class suntopic:
         if not hasattr(self.model, "H"):
             msg = "Model has not been fitted yet. Call fit() first."
             raise ValueError(msg)
+        
+        if solver not in ['ECOS', 'SCS']:
+            msg = "Solver must be either 'ECOS' or 'SCS'"
+            raise ValueError(msg)
 
         data_new = np.sqrt(self.alpha) * X_new
-        # data_new = np.hstack(
-        #     (data_new, np.zeros((data_new.shape[0], 1)))
-        # )  # as there are no observations Y
-        self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
-        self._model_pred.H = self.model.H[:,:-1]
 
-        self._model_pred.factorize(
-            niter=niter, 
-            verbose=verbose, 
-            compute_h=False, 
-            compute_err=compute_err, 
-            compute_topic_err=compute_topic_err, 
-            topic_err_tol=topic_err_tol
-        )
+        if cvxpy:
+            # use cvxpy to predict
+            H = self.model.H[:,:-1]
+            W = cp.Variable((data_new.shape[0], self.num_bases), nonneg=True)
 
-        Y_pred = np.dot(self._model_pred.W, self.model.H[:, -1])
+            objective = cp.Minimize(cp.norm(data_new - W @ H, 'fro'))
+            problem = cp.Problem(objective)
+            if solver == 'SCS':
+                problem.solve(solver=cp.SCS)
+            elif solver == 'ECOS':
+                problem.solve(solver=cp.ECOS)
+
+            W_pred = W.value
+            Y_pred = np.dot(W_pred, self.model.H[:, -1])
+        
+        elif old:
+            # use outdated SNMF to predict
+            data_new = np.hstack((data_new, np.zeros((data_new.shape[0], 1)))) # as there are no observations Y 
+            self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
+            self._model_pred.H = self.model.H[:, :]
+
+            self._model_pred.factorize(
+                niter=niter, 
+                verbose=verbose, 
+                compute_h=False, 
+                compute_err=compute_err, 
+                compute_topic_err=compute_topic_err, 
+                topic_err_tol=topic_err_tol
+            )
+
+            W_pred = self._model_pred.W
+            Y_pred = np.dot(W_pred, self.model.H[:, -1])
+
+
+        else:
+            # use SNMF to predict
+            self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
+            self._model_pred.H = self.model.H[:,:-1]
+
+            self._model_pred.factorize(
+                niter=niter, 
+                verbose=verbose, 
+                compute_h=False, 
+                compute_err=compute_err, 
+                compute_topic_err=compute_topic_err, 
+                topic_err_tol=topic_err_tol
+            )
+
+            W_pred = self._model_pred.W
+            Y_pred = np.dot(W_pred, self.model.H[:, -1])
+
         Y_pred /= np.sqrt(1 - self.alpha)
         if return_topics is False:
             return Y_pred
-        return Y_pred, self._model_pred.W
+        return Y_pred, W_pred
 
     def get_topics(self):
         """
@@ -257,8 +302,9 @@ class suntopic:
         parallel=False,
         verbose=False,
         niter=100,
+        cvxpy=True,
         pred_niter=100,
-        compute_topic_err=True,
+        compute_topic_err=False,
         topic_err_tol=1e-2
     ):
         """
@@ -331,6 +377,7 @@ class suntopic:
             Y_pred = model.predict(
                 self.X[test_index], 
                 random_state=random_state, 
+                cvxpy=cvxpy,
                 niter=pred_niter, 
                 compute_err=False, 
                 compute_topic_err=compute_topic_err,
@@ -343,16 +390,17 @@ class suntopic:
             # currently does not work for parallel
             return mse
 
-        if parallel is False:
-            for i, num_bases in enumerate(num_bases_range):
-                for j, alpha in enumerate(alpha_range):
-                    for k, (train_index, test_index) in enumerate(
-                        self._cv_kf.split(self.Y)
-                    ):
-                        self.cv_errors[i, j, k] = predict_Y_mse(
-                            self, k, alpha, num_bases, train_index, test_index
-                        )
+        total_iterations = len(alpha_range) * len(num_bases_range) * cv_folds
 
+        if parallel is False:
+            with tqdm(total=total_iterations, desc="Cross-Validation Progress") as pbar:
+                for i, num_bases in enumerate(num_bases_range):
+                    for j, alpha in enumerate(alpha_range):
+                        for k, (train_index, test_index) in enumerate(self._cv_kf.split(self.Y)):
+                            self.cv_errors[i, j, k] = predict_Y_mse(
+                                self, k, alpha, num_bases, train_index, test_index
+                            )
+                            pbar.update(1)
         else:
             # Sequentially loop over alpha_ranges and parallelize across topic_range
             num_cores = -1 if len(alpha_range) > 1 else 1  # Use all available cores
@@ -366,11 +414,13 @@ class suntopic:
             )
             # Assign results back to cv_errors array
             idx = 0
-            for i in range(len(num_bases_range)):
-                for j in range(len(alpha_range)):
-                    for k in range(cv_folds):
-                        self.cv_errors[i, j, k] = results[idx]
-                        idx += 1
+            with tqdm(total=total_iterations, desc="Cross-Validation Progress") as pbar:
+                for i in range(len(num_bases_range)):
+                    for j in range(len(alpha_range)):
+                        for k in range(cv_folds):
+                            self.cv_errors[i, j, k] = results[idx]
+                            idx += 1
+                            pbar.update(1)
 
     def cv_summary(self, top_hyperparam_combinations=3):
         """

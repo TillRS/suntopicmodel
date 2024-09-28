@@ -1,5 +1,6 @@
 # Required packages and versions to match the specific data in test_snmf.py
 numpy == 1.24.3
 scikit-learn > 1.3
+joblib
 pytest
 setuptools
