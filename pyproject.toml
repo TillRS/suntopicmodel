@@ -11,13 +11,13 @@ authors = [
 description = "A Python package for the SUN topic model"
 requires-python = ">=3.8"
 dependencies = [
-  matplotlib = ">=3.3.0",
-  numpy = ">=1.19.0",
-  pandas = ">=1.0.0",
-  scipy = ">=1.6.0",
-  scikit-learn = ">=1.1.0",
-  tqdm = ">=4.1.0",
-  cxvpy = ">=1.2.0",
+  matplotlib ">=3.3.0",
+  numpy ">=1.19.0",
+  pandas ">=1.0.0",
+  scipy ">=1.6.0",
+  scikit-learn ">=1.1.0",
+  tqdm ">=4.1.0",
+  cxvpy ">=1.2.0",
 ]
 
 classifiers = [
