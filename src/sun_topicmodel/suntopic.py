@@ -119,8 +119,6 @@ class suntopic(SNMF):
         topic_err_tol = 1e-3,
         cvxpy = False,
         solver = 'ECOS',
-        old = False
-
     ):
         """
         Predict the response variable for new data X_new.
@@ -158,25 +156,6 @@ class suntopic(SNMF):
             W_pred = W.value
             Y_pred = np.dot(W_pred, self.model.H[:, -1])
         
-        elif old:
-            # use outdated SNMF to predict
-            data_new = np.hstack((data_new, np.zeros((data_new.shape[0], 1)))) # as there are no observations Y 
-            self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
-            self._model_pred.H = self.model.H[:, :]
-
-            self._model_pred.factorize(
-                niter=niter, 
-                verbose=verbose, 
-                compute_h=False, 
-                compute_err=compute_err, 
-                compute_topic_err=compute_topic_err, 
-                topic_err_tol=topic_err_tol
-            )
-
-            W_pred = self._model_pred.W
-            Y_pred = np.dot(W_pred, self.model.H[:, -1])
-
-
         else:
             # use SNMF to predict
             self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
