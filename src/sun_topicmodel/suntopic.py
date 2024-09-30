@@ -5,8 +5,12 @@ SUN Topic Model
 
 Authors: Till R. Saenger, ORFE Princeton
 
+This class implements the SUN Topic Model, a semi-supervised topic model that incorporates a response variable into the topic modeling process. 
+This model is first introduced in 
+
 [Citation TBD]
 
+The model is based on the Convex and Semi-Nonnegative Matrix Factorization (SNMF) algorithm by Ding et al. [1] and its implementation in the PyMF library [2].
 """
 
 from __future__ import annotations
@@ -36,8 +40,11 @@ class suntopic(SNMF):
     def __init__(self, Y, X, alpha, num_bases, random_state=None):
         """
         Initialize the suntopic class.
-        data : array_like, shape (_num_samples, _data_dimension)
-        num_bases : int, specifies the number of topics to model
+        X: array_like, shape (_num_samples, _data_dimension)
+        Y: array_like, shape (_num_samples,)
+        alpha: float in (0,1), specifies the weight of the response variable
+        num_bases: int, specifies the number of topics to model
+        random_state: int, seed for random number generator
         """
 
         if alpha < 0 or alpha > 1:
