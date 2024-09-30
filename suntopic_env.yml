@@ -1,5 +1,0 @@
-name: suntopic_test
-channels:
-  - apple
-  - conda-forge
-prefix: /Users/tillrs/mambaforge/envs/suntopic_test
