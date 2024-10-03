@@ -30,7 +30,6 @@ class PyMFBase:
     """
 
     # some small value
-
     _EPS = _EPS
 
     def __init__(self, data, num_bases, random_state=None, **kwargs):
@@ -75,16 +74,20 @@ class PyMFBase:
         self._init_h()
 
     def _init_h(self):
-        """Overwrite for initializing H."""
+        """Initialize H matrix."""
+        raise NotImplementedError("The method _init_h() must be implemented in the subclass.")
 
     def _init_w(self):
-        """Overwrite for initializing W."""
+        """Initialize W matrix."""
+        raise NotImplementedError("The method _init_w() must be implemented in the subclass.")
 
     def _update_h(self):
-        """Overwrite for updating H."""
+        """Update H matrix."""
+        raise NotImplementedError("The method _update_h() must be implemented in the subclass.")
 
     def _update_w(self):
-        """Overwrite for updating W."""
+        """Update W matrix."""
+        raise NotImplementedError("The method _update_w() must be implemented in the subclass.")
 
     def _converged(self, i):
         """
