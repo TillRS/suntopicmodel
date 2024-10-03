@@ -1,7 +1,7 @@
 """
 SUN Topic Model
 
-    suntopic : Class for suntopic model
+    SunTopic : Class for SunTopic model
 
 Authors: Till R. Saenger, ORFE Princeton
 
@@ -30,16 +30,16 @@ from sklearn.model_selection import KFold
 from sun_topicmodel.snmf import SNMF
 
 
-class suntopic(SNMF):
+class SunTopic(SNMF):
     """
-    suntopic(data, num_bases)
+    SunTopic(data, num_bases)
 
 
     """
 
     def __init__(self, Y, X, alpha, num_bases, random_state=None):
         """
-        Initialize the suntopic class.
+        Initialize the SunTopic class.
         X: array_like, shape (_num_samples, _data_dimension)
         Y: array_like, shape (_num_samples,)
         alpha: float in (0,1), specifies the weight of the response variable
@@ -65,7 +65,7 @@ class suntopic(SNMF):
             raise ValueError(msg)
 
         def setup_logging():
-            self._logger = logging.getLogger("suntopic")
+            self._logger = logging.getLogger("SunTopic")
             # Add console handler and set level to DEBUG
             ch = logging.StreamHandler()
             ch.setLevel(logging.DEBUG)
@@ -96,7 +96,7 @@ class suntopic(SNMF):
         self, niter=100, verbose=False, compute_w=True, compute_h=True, compute_err=True, standardize = True
     ):
         """
-        Fit the suntopic model to the data.
+        Fit the SunTopic model to the data.
         """
         self._niter = niter
 
@@ -187,13 +187,13 @@ class suntopic(SNMF):
 
     def get_topics(self):
         """
-        Get the topics from the suntopic model.
+        Get the topics from the SunTopic model.
         """
         return self.model.W
 
     def get_coefficients(self):
         """
-        Get the coefficients from the suntopic model.
+        Get the coefficients from the SunTopic model.
         """
         return self.model.H
 
@@ -223,10 +223,10 @@ class suntopic(SNMF):
 
     def summary(self):
         """
-        Print a summary of the suntopic model.
+        Print a summary of the SunTopic model.
         """
 
-        print("Suntopic Model Summary")
+        print("SunTopic Model Summary")
         print("=" * 50)
         print("Number of topics: ", self.num_bases)
         print("Alpha: ", self.alpha)
@@ -246,7 +246,7 @@ class suntopic(SNMF):
 
     def save(self, filename):
         """
-        Save the suntopic model to a file.
+        Save the SunTopic model to a file.
         """
         np.savez(
             filename,
@@ -261,19 +261,19 @@ class suntopic(SNMF):
     @staticmethod
     def load(filename):
         """
-        Load a suntopic model from a file.
+        Load a SunTopic model from a file.
         """
         npzfile = np.load(filename)
 
         if npzfile["random_state"] == "None":
-            loaded_model = suntopic(
+            loaded_model = SunTopic(
                 Y=npzfile["Y"],
                 X=npzfile["X"],
                 alpha=npzfile["alpha"],
                 num_bases=npzfile["W"].shape[1],
             )
         else:
-            loaded_model = suntopic(
+            loaded_model = SunTopic(
                 Y=npzfile["Y"],
                 X=npzfile["X"],
                 alpha=npzfile["alpha"],
@@ -358,7 +358,7 @@ class suntopic(SNMF):
             random_state=self.cv_random_state,
             niter=niter,
         ):
-            model = suntopic(
+            model = SunTopic(
                 Y=self.Y[train_index],
                 X=self.X[train_index],
                 alpha=alpha,
@@ -416,7 +416,7 @@ class suntopic(SNMF):
 
     def cv_summary(self, top_hyperparam_combinations=3):
         """
-        Print a summary of the cross-validation runs of suntopic models.
+        Print a summary of the cross-validation runs of SunTopic models.
         """
 
         if hasattr(self, "cv_errors") is False:

@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pytest
 
-from sun_topicmodel import suntopic
+from sun_topicmodel import SunTopic
 
 sample_size = 10
 data_dim = 20
@@ -23,8 +23,8 @@ def sample_Y():
 
 
 def test_initialization(sample_X, sample_Y, alpha=0.5, num_bases=5):
-    # Test initialization of suntopic instance
-    model = suntopic(sample_Y, sample_X, alpha=alpha, num_bases=num_bases)
+    # Test initialization of SunTopic instance
+    model = SunTopic(sample_Y, sample_X, alpha=alpha, num_bases=num_bases)
     assert np.allclose(
         model.data,
         np.hstack(
@@ -42,27 +42,27 @@ def test_initialization(sample_X, sample_Y, alpha=0.5, num_bases=5):
 
 @pytest.mark.parametrize("alpha", [-0.1, 2])
 def test_initialization_with_invalid_alpha(sample_X, sample_Y, alpha):
-    # Test initialization of suntopic instance with invalid alpha
+    # Test initialization of SunTopic instance with invalid alpha
     with pytest.raises(ValueError):
-        suntopic(sample_Y, sample_X, alpha=alpha, num_bases=5)
+        SunTopic(sample_Y, sample_X, alpha=alpha, num_bases=5)
 
 
 @pytest.mark.parametrize("num_bases", [0, 21, 10.5])
 def test_initialization_with_invalid_num_bases(sample_X, sample_Y, num_bases):
-    # Test initialization of suntopic instance with invalid num_bases
+    # Test initialization of SunTopic instance with invalid num_bases
     with pytest.raises(ValueError):
-        suntopic(sample_Y, sample_X, alpha=0.5, num_bases=num_bases)
+        SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=num_bases)
 
 
 def test_initialization_with_invalid_num_samples(sample_X, sample_Y):
-    # Test initialization of suntopic instance with invalid num_samples
+    # Test initialization of SunTopic instance with invalid num_samples
     with pytest.raises(ValueError):
-        suntopic(sample_Y, sample_X[:5], alpha=0.5, num_bases=5)
+        SunTopic(sample_Y, sample_X[:5], alpha=0.5, num_bases=5)
 
 
 def test_fit(sample_X, sample_Y):
-    # Test fit method of suntopic instance
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test fit method of SunTopic instance
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     assert model.model.W.shape == (sample_size, 4)
     assert model.model.H.shape == (4, data_dim + 1)
@@ -70,16 +70,16 @@ def test_fit(sample_X, sample_Y):
     assert (model.get_topics() == model.model.W).all()
 
 def test_fit_standardization(sample_X, sample_Y):
-    # Test fit method of suntopic instance with standardization
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test fit method of SunTopic instance with standardization
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10, standardize=True)
     # Ensure that the standard deviation is approximately 1 after standardization
     coefficients_std = np.std(model.get_topics(), axis=0)  # Added () to method call
     assert np.allclose(coefficients_std, 1, atol=1e-1), "Standardized coefficients should have a standard deviation of approximately 1"
 
 def test_fit_no_standardization(sample_X, sample_Y):
-    # Test fit method of suntopic instance without standardization
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test fit method of SunTopic instance without standardization
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10, standardize=False)
     # Ensure that the standard deviation is not approximately 1 when standardization is off
     coefficients_std = np.std(model.get_topics(), axis=0)  # Added () to method call
@@ -87,8 +87,8 @@ def test_fit_no_standardization(sample_X, sample_Y):
 
 
 def test_get_top_docs_idx(sample_X, sample_Y):
-    # Test get_top_docs method of suntopic instance
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test get_top_docs method of SunTopic instance
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     with pytest.raises(ValueError):
         model.get_top_docs_idx(topic=10, n_docs=10)
@@ -103,13 +103,13 @@ def test_get_top_docs_idx(sample_X, sample_Y):
 
 @pytest.mark.parametrize("random_state", [None, 21])
 def test_save_load(sample_X, sample_Y, random_state):
-    # Test save and load methods of suntopic instance
-    model = suntopic(
+    # Test save and load methods of SunTopic instance
+    model = SunTopic(
         sample_Y, sample_X, alpha=0.5, num_bases=4, random_state=random_state
     )
     model.fit(niter=10)
     model.save(filename="test_model.npz")
-    loaded_model = suntopic.load(filename="test_model.npz")
+    loaded_model = SunTopic.load(filename="test_model.npz")
     os.remove("test_model.npz")
     assert np.allclose(model.data, loaded_model.data)
     assert model.num_bases == loaded_model.num_bases
@@ -119,8 +119,8 @@ def test_save_load(sample_X, sample_Y, random_state):
 
 
 def test_predict_and_infer(sample_X, sample_Y):
-    # Test predict method of suntopic instance
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test predict method of SunTopic instance
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     X_new = rng.random((5, data_dim))
     Y_pred = model.predict(X_new)
@@ -131,8 +131,8 @@ def test_predict_and_infer(sample_X, sample_Y):
 
 
 def test_predict_with_invalid_X_new(sample_X, sample_Y):
-    # Test predict method of suntopic instance with invalid X_new
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test predict method of SunTopic instance with invalid X_new
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     X_new = rng.random((5, 21))
     with pytest.raises(ValueError):
@@ -140,8 +140,8 @@ def test_predict_with_invalid_X_new(sample_X, sample_Y):
 
 
 def test_predict_with_single_X_new(sample_X, sample_Y):
-    # Test predict method of suntopic instance with invalid X_new
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test predict method of SunTopic instance with invalid X_new
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     X_new = rng.random((5, 20))
     Y_pred = model.predict(X_new[0, :])
@@ -149,8 +149,8 @@ def test_predict_with_single_X_new(sample_X, sample_Y):
 
 
 def test_summary(sample_X, sample_Y):
-    # Test summary method of suntopic instance
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test summary method of SunTopic instance
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     assert model.summary() is None
 
@@ -158,8 +158,8 @@ def test_summary(sample_X, sample_Y):
 def test_hyperparam_cv():
     Y = rng.random(100)
     X = rng.random((100, 200))
-    # Test find_alpha_cv method of suntopic instance
-    model = suntopic(Y, X, alpha=0.5, num_bases=4)
+    # Test find_alpha_cv method of SunTopic instance
+    model = SunTopic(Y, X, alpha=0.5, num_bases=4)
     model.hyperparam_cv(
         alpha_range=[0.1, 0.5, 0.9],
         num_bases_range=[2, 4, 6],
@@ -174,7 +174,7 @@ def test_hyperparam_cv():
     assert ((model.cv_errors >= 0) & (model.cv_errors <= 1)).all()
     cv_errors = model.cv_errors
 
-    model_parallel = suntopic(Y, X, alpha=0.5, num_bases=4)
+    model_parallel = SunTopic(Y, X, alpha=0.5, num_bases=4)
     model_parallel.hyperparam_cv(
         alpha_range=[0.1, 0.5, 0.9],
         num_bases_range=[2, 4, 6],
@@ -192,17 +192,17 @@ def test_hyperparam_cv():
 
 
 def test_cv_summary_without_fit(sample_X, sample_Y):
-    # Test summary method of suntopic instance without fit
-    model = suntopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    # Test summary method of SunTopic instance without fit
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     with pytest.raises(ValueError):
         model.cv_summary()
 
 
 def test_cv_mse_plot():
-    # Test cv_mse_plot method of suntopic instance
+    # Test cv_mse_plot method of SunTopic instance
     Y = rng.random(100)
     X = rng.random((100, 200))
-    model = suntopic(Y, X, alpha=0.5, num_bases=4)
+    model = SunTopic(Y, X, alpha=0.5, num_bases=4)
     with pytest.raises(ValueError):
         model.cv_mse_plot()
     model.hyperparam_cv(
