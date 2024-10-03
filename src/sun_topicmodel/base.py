@@ -14,6 +14,7 @@ Christian Thurau (https://github.com/pzoccante/pymf/blob/master/pymf/)
 IEEE Trans. on Pattern Analysis and Machine Intelligence 32(1), 45-55.
 """
 from __future__ import annotations
+from sun_topicmodel.utils import setup_logging
 
 import logging
 import logging.config
@@ -40,24 +41,7 @@ class PyMFBase:
         random_state : int, seed for random number generator
         """
 
-        def setup_logging():
-            # create logger
-            self._logger = logging.getLogger("pymf")
-
-            # add ch to logger
-            if len(self._logger.handlers) < 1:
-                # create console handler and set level to debug
-                ch = logging.StreamHandler()
-                ch.setLevel(logging.DEBUG)
-                # create formatter
-                formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-
-                # add formatter to ch
-                ch.setFormatter(formatter)
-
-                self._logger.addHandler(ch)
-
-        setup_logging()
+        setup_logging(self)
 
         # set variables
         self.data = data
