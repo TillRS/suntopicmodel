@@ -51,22 +51,6 @@ def test_initialization_with_invalid_num_bases(sample_data):
         SNMF(sample_data, num_bases=0)
 
 
-def test_save_load(sample_data, tmp_path):
-    # Test save and load methods of SNMF instance
-    model = SNMF(sample_data, num_bases=4)
-    model.factorize(niter=10, compute_err=True)
-
-    # Use tmp_path to create a temporary file path
-    test_model_path = tmp_path / "test_model.npz"
-    model.save(filename=str(test_model_path))
-
-    loaded_model = SNMF.load(filename=str(test_model_path))
-
-    # Assert that the matrices are close to each other
-    assert np.allclose(model.W, loaded_model.W)
-    assert np.allclose(model.H, loaded_model.H)
-
-
 # define specific test cases
 rng = np.random.default_rng(seed=42)
 data_test = rng.standard_normal((5, 5))

@@ -173,31 +173,3 @@ class PyMFBase:
             if i > 1 and compute_topic_err and self.topic_err[i] < topic_err_tol:
                 self.topic_err = self.topic_err[:i]
                 break
-
-    # Define a save method to export self.W and self.H
-    def save(self, filename):
-        """Save the factorization to a file.
-
-        Parameters
-        ----------
-        filename : str
-            name of the file to save to.
-        """
-        np.savez(filename, W=self.W, H=self.H, ferr=self.ferr)
-
-    @staticmethod
-    def load(filename):
-        """Load a factorization from a file.
-
-        Parameters
-        ----------
-        filename : str
-            name of the file to load from.
-        """
-        npzfile = np.load(filename)
-        loaded_model = PyMFBase(
-            data=npzfile["W"] @ npzfile["H"], num_bases=npzfile["W"].shape[1]
-        )
-        loaded_model.W = npzfile["W"]
-        loaded_model.H = npzfile["H"]
-        return loaded_model
