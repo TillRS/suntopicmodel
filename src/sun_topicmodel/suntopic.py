@@ -76,7 +76,6 @@ class SunTopic(SNMF):
         data = np.hstack(
             (np.sqrt(alpha) * X, np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1))
         )
-        np.hstack((np.sqrt(alpha) * X, np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1)))
         self.data = data
         self.model = SNMF(data, num_bases, random_state=random_state)
         self.model.random_state = random_state
@@ -231,7 +230,6 @@ class SunTopic(SNMF):
             mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])),
         )
         print("Prediction coefficients: ", self.model.H[:, -1])
-        return
 
     def save(self, filename):
         """
@@ -450,7 +448,6 @@ class SunTopic(SNMF):
             print(
                 f"Top {i+1} hyperparam combinations - num_bases: {self.cv_num_base_range[min_idx[0][i]]:.2f}, alpha: {self.cv_alpha_range[min_idx[1][i]]:.2f}, MSE: {mean_cv_errors[min_idx[0][i], min_idx[1][i]]:.4f}"
             )
-        return
 
     def cv_mse_plot(
         self,
@@ -489,4 +486,3 @@ class SunTopic(SNMF):
         if return_plot:
             return fig
         plt.show()
-        return None
