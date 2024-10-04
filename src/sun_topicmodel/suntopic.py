@@ -73,9 +73,9 @@ class SunTopic(SNMF):
         self.alpha = alpha
         self._niter = 0
 
-        data = np.hstack(
-            (np.sqrt(alpha) * X, np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1))
-        )
+        X_scaled = np.sqrt(alpha) * X  # Scaling matrix X by the square root of alpha
+        Y_scaled = np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1)  # Scaling and reshaping Y
+        data = np.hstack((X_scaled, Y_scaled))
         self.data = data
         self.model = SNMF(data, num_bases, random_state=random_state)
         self.model.random_state = random_state
@@ -206,8 +206,12 @@ class SunTopic(SNMF):
         if topic < 0 or topic >= self.model.W.shape[1]:
             msg = "Topic index out of bounds"
             raise ValueError(msg)
+    
+        topic_weights = self.model.W[:, topic]
+        top_indices_desc  = np.argsort(topic_weights)[::-1]
+        top_n_docs_indices = top_indices_desc[:n_docs]
+        return top_n_docs_indices
 
-        return np.argsort(self.model.W[:, topic])[::-1][:n_docs]
 
     def summary(self):
         """
