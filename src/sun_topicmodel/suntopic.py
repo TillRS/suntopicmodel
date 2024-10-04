@@ -217,23 +217,24 @@ class SunTopic(SNMF):
         """
         Print a summary of the SunTopic model.
         """
+        predicted_values = np.dot(self.model.W, self.model.H[:, -1]) / np.sqrt(1 - self.alpha)
+        in_sample_mse = mean_squared_error(self.Y, predicted_values)
 
-        print("SunTopic Model Summary")
-        print("=" * 50)
-        print("Number of topics: ", self.num_bases)
-        print("Alpha: ", self.alpha)
-        print("Data shape: ", self.data.shape)
-        print("Number of iterations of model fit: ", self._niter)
-        print("Random initialization state: ", self.model.random_state)
         print(
-            "Frobenius norm error: ",
-            np.linalg.norm(self.data - self.model.W @ self.model.H),
+            f"""
+            SunTopic Model Summary
+            {'=' * 50}
+            Number of topics: {self.num_bases}
+            Alpha: {self.alpha}
+            Data shape: {self.data.shape}
+            Number of iterations of model fit: {self._niter}
+            Random initialization state: {self.model.random_state}
+            Frobenius norm error: {np.linalg.norm(self.data - self.model.W @ self.model.H)}
+            In-sample MSE: {in_sample_mse}
+            Prediction coefficients: {self.model.H[:, -1]}
+            """
         )
-        print(
-            "In-sample MSE: ",
-            mean_squared_error(self.Y, np.dot(self.model.W, self.model.H[:, -1])),
-        )
-        print("Prediction coefficients: ", self.model.H[:, -1])
+
 
     def save(self, filename):
         """
@@ -441,13 +442,18 @@ class SunTopic(SNMF):
             np.argsort(mean_cv_errors, axis=None), mean_cv_errors.shape
         )
 
-        print("Cross-Validation Summary")
-        print("=" * 50)
-        print("Alpha candidate values: ", self.cv_alpha_range)
-        print("Number of topics: ", self.cv_num_base_range)
-        print("Number of folds: ", self.cv_folds)
-        print("CV Random state: ", self.cv_random_state)
-        print("=" * 50)
+        print(
+            f"""
+            Cross-Validation Summary
+            {'=' * 50}
+            Alpha candidate values: {self.cv_alpha_range}
+            Number of topics: {self.cv_num_base_range}
+            Number of folds: {self.cv_folds}
+            CV Random state: {self.cv_random_state}
+            {'=' * 50}
+            """
+        )
+
         for i in range(top_hyperparam_combinations):
             print(
                 f"Top {i+1} hyperparam combinations - num_bases: {self.cv_num_base_range[min_idx[0][i]]:.2f}, alpha: {self.cv_alpha_range[min_idx[1][i]]:.2f}, MSE: {mean_cv_errors[min_idx[0][i], min_idx[1][i]]:.4f}"
