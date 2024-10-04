@@ -28,6 +28,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import KFold
 
 from sun_topicmodel.snmf import SNMF
+from sun_topicmodel.utils import setup_logging
 
 
 class SunTopic(SNMF):
@@ -64,19 +65,7 @@ class SunTopic(SNMF):
             msg = "Y and X must have the same number of samples"
             raise ValueError(msg)
 
-        def setup_logging():
-            self._logger = logging.getLogger("SunTopic")
-            # Add console handler and set level to DEBUG
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.DEBUG)
-            # Create formatter
-            formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-            # Add formatter to handler
-            ch.setFormatter(formatter)
-            # Add handler to logger
-            self._logger.addHandler(ch)
-
-        setup_logging()
+        setup_logging(self)
 
         self.Y = Y
         self.X = X
@@ -285,6 +274,44 @@ class SunTopic(SNMF):
         loaded_model.model.H = npzfile["H"]
         return loaded_model
 
+    
+    def _predict_Y_mse(
+            self,
+            k,
+            alpha,
+            num_bases,
+            train_index,
+            test_index,
+            niter=100,
+            pred_niter=100,
+            cvxpy=False,
+            compute_topic_err=False,
+            topic_err_tol=1e-3
+        ):
+            model = SunTopic(
+                Y=self.Y[train_index],
+                X=self.X[train_index],
+                alpha=alpha,
+                num_bases=num_bases,
+                random_state=self.cv_random_state,
+            )
+            model.fit(niter=niter, verbose=False)
+            Y_pred = model.predict(
+                self.X[test_index], 
+                random_state=self.cv_random_state, 
+                cvxpy=cvxpy,
+                niter=pred_niter, 
+                compute_err=False, 
+                compute_topic_err=compute_topic_err,
+                topic_err_tol=topic_err_tol
+            )
+            mse = mean_squared_error(self.Y[test_index], Y_pred)
+            self._logger.info(
+                "Alpha: %s, Num bases: %s, Fold: %s, MSE: %s", alpha, num_bases, k, mse
+            )
+            # currently does not work for parallel
+            return mse
+
     def hyperparam_cv(
         self,
         alpha_range,
@@ -348,40 +375,6 @@ class SunTopic(SNMF):
             np.ones((len(num_bases_range), len(alpha_range), cv_folds)) * np.nan
         )
 
-        def predict_Y_mse(
-            self,
-            k,
-            alpha,
-            num_bases,
-            train_index,
-            test_index,
-            random_state=self.cv_random_state,
-            niter=niter,
-        ):
-            model = SunTopic(
-                Y=self.Y[train_index],
-                X=self.X[train_index],
-                alpha=alpha,
-                num_bases=num_bases,
-                random_state=random_state,
-            )
-            model.fit(niter=niter, verbose=False)
-            Y_pred = model.predict(
-                self.X[test_index], 
-                random_state=random_state, 
-                cvxpy=cvxpy,
-                niter=pred_niter, 
-                compute_err=False, 
-                compute_topic_err=compute_topic_err,
-                topic_err_tol=topic_err_tol
-            )
-            mse = mean_squared_error(self.Y[test_index], Y_pred)
-            self._logger.info(
-                "Alpha: %s, Num bases: %s, Fold: %s, MSE: %s", alpha, num_bases, k, mse
-            )
-            # currently does not work for parallel
-            return mse
-
         total_iterations = len(alpha_range) * len(num_bases_range) * cv_folds
 
         if parallel is False:
@@ -389,16 +382,34 @@ class SunTopic(SNMF):
                 for i, num_bases in enumerate(num_bases_range):
                     for j, alpha in enumerate(alpha_range):
                         for k, (train_index, test_index) in enumerate(self._cv_kf.split(self.Y)):
-                            self.cv_errors[i, j, k] = predict_Y_mse(
-                                self, k, alpha, num_bases, train_index, test_index
+                            self.cv_errors[i, j, k] = self._predict_Y_mse(
+                                            k= k,
+                                            alpha = alpha,
+                                            num_bases=num_bases,
+                                            train_index=train_index,
+                                            test_index = test_index,
+                                            niter=niter,
+                                            pred_niter=pred_niter,
+                                            cvxpy=cvxpy,
+                                            compute_topic_err=compute_topic_err,
+                                            topic_err_tol=topic_err_tol
                             )
                             pbar.update(1)
         else:
             # Sequentially loop over alpha_ranges and parallelize across topic_range
             num_cores = -1 if len(alpha_range) > 1 else 1  # Use all available cores
             results = Parallel(n_jobs=num_cores)(
-                delayed(predict_Y_mse)(
-                    self, k, alpha, num_bases, train_index, test_index
+                delayed(self._predict_Y_mse)(
+                                            k= k,
+                                            alpha = alpha,
+                                            num_bases=num_bases,
+                                            train_index=train_index,
+                                            test_index = test_index,
+                                            niter=niter,
+                                            pred_niter=pred_niter,
+                                            cvxpy=cvxpy,
+                                            compute_topic_err=compute_topic_err,
+                                            topic_err_tol=topic_err_tol
                 )
                 for i, num_bases in enumerate(num_bases_range)
                 for j, alpha in enumerate(alpha_range)
