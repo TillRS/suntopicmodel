@@ -167,12 +167,11 @@ def test_hyperparam_cv():
         random_state=21,
         niter=10,
     )
-    assert model.cv_errors.shape == (3, 3, 3)
-    assert model.cv_alpha_range == [0.1, 0.5, 0.9]
-    assert model.cv_num_base_range == [2, 4, 6]
-    assert model.cv_folds == 3
-    assert ((model.cv_errors >= 0) & (model.cv_errors <= 1)).all()
-    cv_errors = model.cv_errors
+    assert model.cv_values["errors"].shape == (3, 3, 3)
+    assert model.cv_values["alpha_range"] == [0.1, 0.5, 0.9]
+    assert model.cv_values["num_base_range"] == [2, 4, 6]
+    assert model.cv_values["folds"] == 3
+    assert ((model.cv_values["errors"] >= 0) & (model.cv_values["errors"] <= 1)).all()
 
     model_parallel = SunTopic(Y, X, alpha=0.5, num_bases=4)
     model_parallel.hyperparam_cv(
@@ -183,12 +182,12 @@ def test_hyperparam_cv():
         niter=10,
         parallel=True,
     )
-    assert model_parallel.cv_errors.shape == (3, 3, 3)
-    assert model_parallel.cv_alpha_range == [0.1, 0.5, 0.9]
-    assert model_parallel.cv_num_base_range == [2, 4, 6]
-    assert model_parallel.cv_folds == 3
-    assert ((model_parallel.cv_errors >= 0) & (model_parallel.cv_errors <= 1)).all()
-    assert cv_errors.all() == model_parallel.cv_errors.all()
+    assert model_parallel.cv_values["errors"].shape == (3, 3, 3)
+    assert model_parallel.cv_values["alpha_range"] == [0.1, 0.5, 0.9]
+    assert model_parallel.cv_values["num_base_range"] == [2, 4, 6]
+    assert model_parallel.cv_values["folds"] == 3
+    assert ((model_parallel.cv_values["errors"] >= 0) & (model_parallel.cv_values["errors"] <= 1)).all()
+    assert model.cv_values["errors"].all() == model_parallel.cv_values["errors"].all()
 
 
 def test_cv_summary_without_fit(sample_X, sample_Y):
@@ -211,6 +210,7 @@ def test_cv_mse_plot():
         cv_folds=3,
         random_state=21,
         niter=10,
+        parallel=False,
     )
     fig = model.cv_mse_plot(return_plot=True)
     assert fig is not None
