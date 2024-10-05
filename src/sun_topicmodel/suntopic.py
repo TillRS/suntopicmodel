@@ -126,7 +126,7 @@ class SunTopic(SNMF):
         random_state=None,
         verbose=False,
         compute_err=False,
-        compute_topic_err = True,
+        compute_topic_err = False,
         topic_err_tol = 1e-3,
         cvxpy = False,
         solver = 'SCS',
@@ -313,7 +313,7 @@ class SunTopic(SNMF):
             num_bases=num_bases,
             random_state=self.cv_values["random_state"],
         )
-        model.fit(niter=niter, verbose=False)
+        model.fit(niter=niter, verbose=False, compute_err=False)
         Y_pred = model.predict(
             self.X[test_index], 
             random_state=self.cv_values["random_state"], 
@@ -542,7 +542,7 @@ def _parallel_predict_Y_mse(
         num_bases=num_bases,
         random_state=cv_random_state,
     )
-    model.fit(niter=niter, verbose=False)
+    model.fit(niter=niter, verbose=False, compute_err=False)
     Y_pred = model.predict(
         X[test_index], 
         random_state=cv_random_state, 
