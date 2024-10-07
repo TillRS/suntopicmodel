@@ -101,6 +101,21 @@ class SunTopic(SNMF):
     ):
         """
         Fit the SunTopic model to the data.
+
+        Parameters
+        ----------
+        niter : int
+            Number of iterations for the model fitting.
+        verbose : bool
+            Whether to print progress messages.
+        compute_w : bool
+            Whether to update the W matrix.
+        compute_h : bool
+            Whether to update the H matrix.
+        compute_err : bool
+            Whether to compute the Frobenius norm error.
+        standardize : bool
+            Whether to standardize the W and H matrices after fitting.
         """
         self._niter = niter
 
@@ -133,6 +148,30 @@ class SunTopic(SNMF):
     ):
         """
         Predict the response variable for new data X_new.
+
+        Parameters
+        ----------
+        X_new : np.ndarray
+            New data array of shape (n, d) where `n` is the number of samples and 
+            `d` is the dimension of each data sample.
+        return_topics : bool
+            Whether to return the topics.
+        niter : int
+            Number of iterations for the prediction.
+        random_state : int
+            Seed for the random initialization of the inferred W.
+        verbose : bool
+            Whether to print progress messages.
+        compute_err : bool
+            Whether to compute the Frobenius norm error.
+        compute_topic_err : bool
+            Whether to compute the topic error.
+        topic_err_tol : float
+            Early stopping tolerance for topic error.
+        cvxpy : bool
+            Whether to use cvxpy for prediction instead of closed form updating steps.
+        solver : str
+            Solver to use for cvxpy optimization. Must be either 'ECOS' or 'SCS'.
         """
         # Reshape singular observation to matrix
         if X_new.ndim == 1:
@@ -192,18 +231,40 @@ class SunTopic(SNMF):
     def get_topics(self):
         """
         Get the topics from the SunTopic model.
+
+        Returns
+        -------
+        np.ndarray
+            The topics matrix W.
         """
         return self.model.W
 
     def get_coefficients(self):
         """
         Get the coefficients from the SunTopic model.
+
+        Returns
+        -------
+        np.ndarray
+            The coefficients matrix H.
         """
         return self.model.H
 
     def get_top_docs_idx(self, topic, n_docs=10):
         """
         Get the index of the top n documents for a given topic.
+
+        Parameters
+        ----------
+        topic : int
+            Index of the topic.
+        n_docs : int
+            Number of top documents to return.
+
+        Returns
+        -------
+        np.ndarray
+            Array of indices of the top documents.
         """
         if not hasattr(self.model, "W"):
             msg = "Model has not been fitted yet. Call fit() first."
@@ -254,7 +315,13 @@ class SunTopic(SNMF):
 
     def save(self, filename):
         """
-        Save the SunTopic model to a file.
+        Save the SunTopic model to an npz file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file to save the model.
+        
         """
         np.savez(
             filename,
@@ -269,7 +336,13 @@ class SunTopic(SNMF):
     @staticmethod
     def load(filename):
         """
-        Load a SunTopic model from a file.
+        Load a SunTopic model from an npz file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file to load the model from.
+
         """
         npzfile = np.load(filename)
 
@@ -294,6 +367,7 @@ class SunTopic(SNMF):
         return loaded_model
 
     def _predict_Y_mse(
+            
             self,
             k,
             alpha,
@@ -465,6 +539,11 @@ class SunTopic(SNMF):
     def cv_summary(self, top_hyperparam_combinations=3):
         """
         Print a summary of the cross-validation runs of SunTopic models.
+
+        Parameters
+        ----------
+        top_hyperparam_combinations : int
+            Number of top hyperparameter combinations to print.
         """
 
         if self.cv_values["random_state"] is None:
@@ -502,6 +581,18 @@ class SunTopic(SNMF):
     ):
         """
         Return plot of cross-validation errors.
+
+        Parameters
+        ----------
+        figsize : tuple
+            Figure size.
+        title : str
+            Title of the plot.
+        return_plot : bool
+            Whether to return the plot.
+        benchmark : float
+            Benchmark value to plot as a horizontal dashed line.
+
         """
         if self.cv_values["random_state"] is None:
             msg = "Cross-validation errors have not been computed yet. Call hyperparam_cv() first."
