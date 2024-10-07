@@ -366,44 +366,6 @@ class SunTopic(SNMF):
         loaded_model.model.H = npzfile["H"]
         return loaded_model
 
-    def _predict_Y_mse(
-            
-            self,
-            k,
-            alpha,
-            num_bases,
-            train_index,
-            test_index,
-            niter=100,
-            pred_niter=100,
-            cvxpy=False,
-            compute_topic_err=False,
-            topic_err_tol=1e-2,
-        ):
-        model = SunTopic(
-            Y=self.Y[train_index],
-            X=self.X[train_index],
-            alpha=alpha,
-            num_bases=num_bases,
-            random_state=self.cv_values["random_state"],
-        )
-        model.fit(niter=niter, verbose=False, compute_err=False)
-        Y_pred = model.predict(
-            self.X[test_index], 
-            random_state=self.cv_values["random_state"], 
-            cvxpy=cvxpy,
-            niter=pred_niter, 
-            compute_err=False, 
-            compute_topic_err=compute_topic_err,
-            topic_err_tol=topic_err_tol
-        )
-        mse = mean_squared_error(self.Y[test_index], Y_pred)
-        self._logger.info(
-            "Alpha: %s, Num bases: %s, Fold: %s, MSE: %s", alpha, num_bases, k, mse
-        )
-
-        return mse
-
     def hyperparam_cv(
         self,
         alpha_range,
@@ -483,17 +445,19 @@ class SunTopic(SNMF):
                 for i, num_bases in enumerate(num_bases_range):
                     for j, alpha in enumerate(alpha_range):
                         for k, (train_index, test_index) in enumerate(self.cv_values["kf"].split(self.Y)):
-                            self.cv_values["errors"][i, j, k] = self._predict_Y_mse(
-                                            k= k,
-                                            alpha = alpha,
-                                            num_bases=num_bases,
-                                            train_index=train_index,
-                                            test_index = test_index,
-                                            niter=niter,
-                                            pred_niter=pred_niter,
-                                            cvxpy=cvxpy,
-                                            compute_topic_err=compute_topic_err,
-                                            topic_err_tol=topic_err_tol
+                            self.cv_values["errors"][i, j, k] = _predict_Y_mse(
+                                                                        self.Y, 
+                                                                        self.X, 
+                                                                        self.cv_values["random_state"],
+                                                                        alpha=alpha,
+                                                                        num_bases=num_bases,
+                                                                        train_index=train_index,
+                                                                        test_index=test_index,
+                                                                        niter=niter,
+                                                                        pred_niter=pred_niter,
+                                                                        cvxpy=cvxpy,
+                                                                        compute_topic_err=compute_topic_err,
+                                                                        topic_err_tol=topic_err_tol
                             )
                             pbar.update(1)
         else:
@@ -502,9 +466,10 @@ class SunTopic(SNMF):
             try:
                 with tqdm(total=total_iterations, desc="Cross-Validation Progress") as pbar:
                     results = Parallel(n_jobs=num_cores)(
-                        delayed(_parallel_predict_Y_mse)(
-                            self.Y, self.X, self.cv_values["random_state"],
-                            k=k,
+                        delayed(_predict_Y_mse)(
+                            self.Y, 
+                            self.X, 
+                            self.cv_values["random_state"],
                             alpha=alpha,
                             num_bases=num_bases,
                             train_index=train_index,
@@ -623,9 +588,58 @@ class SunTopic(SNMF):
         plt.show()
 
 
-def _parallel_predict_Y_mse(
-    Y, X, cv_random_state, k, alpha, num_bases, train_index, test_index, niter, pred_niter, cvxpy, compute_topic_err, topic_err_tol
+def _predict_Y_mse(
+    Y, 
+    X, 
+    cv_random_state, 
+    alpha, 
+    num_bases, 
+    train_index, 
+    test_index, 
+    niter, 
+    pred_niter, 
+    cvxpy, 
+    compute_topic_err, 
+    topic_err_tol
 ):
+    """
+    Fuction for cross-validation predictions as part of the hyperparam_cv method.
+    Implemented separately to allow for parallel execution.
+    Predict the response variable and compute the mean squared error.
+
+    Parameters
+    ----------
+    Y : np.ndarray
+        Response variable array of shape (n,) where `n` is the number of samples.
+    X : np.ndarray
+        Input data array of shape (n, d) where `n` is the number of samples and 
+        `d` is the dimension of each data sample.
+    cv_random_state : int
+        Seed for the random number generator.
+    alpha : float
+        Specifies the weight of the response variable. Must be a float in the range (0, 1).
+    num_bases : int
+        Specifies the number of topics to model.
+    train_index : np.ndarray
+        Indices of the training data.
+    test_index : np.ndarray
+        Indices of the test data.
+    niter : int 
+        Number of iterations for the model fitting.
+    pred_niter : int
+        Number of iterations for the prediction.
+    cvxpy : bool
+        Whether to use cvxpy for prediction.
+    compute_topic_err : bool
+        Whether to compute the topic error.
+    topic_err_tol : float
+        Early stopping tolerance for topic error.
+    
+    Returns
+    -------
+    float
+        Mean squared error of the prediction.
+    """
     model = SunTopic(
         Y=Y[train_index],
         X=X[train_index],
