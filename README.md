@@ -1,5 +1,7 @@
 # SUN_TopicModel
-Python implementation of the SUpervised Nonnegative matrix factorization (SUN) topic model for topic discovery and effect estimation from \[CITATION TBD].
+Python implementation of the SUpervised Nonnegative matrix factorization (SUN) topic model for topic discovery and effect estimation from "AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments".
+
+
 
 ## Installation
 To install this package, clone the repository and install it using pip.
@@ -7,12 +9,12 @@ The current setup requires manual installation of the dependencies or using the 
 ```bash
 git clone https://github.com/TillRS/SUN_TopicModel
 cd SUN_TopicModel
-conda env create -f suntopic_env.yml
 pip install .
 ```
 
 ## Usage
-Refer to the `sample.ipynb` notebook for a demonstration of the usage of this package.
+For a sample use of the package, please refer to the replication code of the AuoPersaude paper, avalilable here: https://github.com/TillRS/AutoPersuade.
+For a simpler demonstartion, refer to the `sample.ipynb` notebook.
 
 ## Structure
 #### Package:
@@ -42,13 +44,8 @@ Pytest test functions for the different class objects are collected in:
 - **`test_tuntopic.py`:** Tests for topic modeling functionalities.
 
 ## Dependencies and setup
-- Relevant dependencies are included in `pyproject.toml` and `ci_requirements.txt`.
-- Additional requirements included in `suntopic_env.yml` are:
-    - ipykernel (for the sample notebook)
-    - statsmodels (for the sample notebook)
-
-- The CI setup is included in `ci_requirements.txt`.
-- A python environment for testing is included in `suntopic_env.yml`.
+- Relevant dependencies are included in `pyproject.toml`.
+- The CI setup is included in `.github/workflows/ci.yml`.
 
 
 ## Acknowledgements
