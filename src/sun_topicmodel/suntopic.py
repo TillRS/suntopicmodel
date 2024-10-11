@@ -6,9 +6,7 @@ SUN Topic Model
 Authors: Till R. Saenger, ORFE Princeton
 
 This class implements the SUN Topic Model, a semi-supervised topic model that incorporates a response variable into the topic modeling process. 
-This model is first introduced in 
-
-[Citation TBD]
+This model is first introduced in "AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments".
 
 The model is based on the Convex and Semi-Nonnegative Matrix Factorization (SNMF) algorithm by Ding et al. [1] and its implementation in the PyMF library [2].
 """
