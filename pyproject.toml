@@ -11,12 +11,14 @@ authors = [
 description = "A Python package for the SUN topic model"
 requires-python = ">=3.8"
 dependencies = [
+dependencies = [
   "matplotlib >=3.3.0",
   "numpy >=1.19.0",
-  "scipy >=1.6.0",
   "scikit-learn >=1.1.0",
   "tqdm >=4.1.0",
-  "cvxpy >=1.2.0"
+  "cvxpy >=1.2.0",
+  "joblib >=1.4.2", 
+]
 ]
 
 classifiers = [
@@ -31,7 +33,9 @@ Issues = "https://github.com/tillrs/sun_topicmodel/issues"
 
 [project.optional-dependencies]
 tests = [
-    "pytest-cov>=2.9.0"
+    "pytest-cov >=2.9.0",
+    "ipykernel >=6.29.5", 
+    "statsmodels >=0.14.2",
 ]
 
 [tool.ruff]
