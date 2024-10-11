@@ -32,6 +32,7 @@ Issues = "https://github.com/tillrs/sun_topicmodel/issues"
 
 [project.optional-dependencies]
 tests = [
+    "pytest >=8.3.3", 
     "pytest-cov >=2.9.0",
     "ipykernel >=6.29.5", 
     "statsmodels >=0.14.2",
