@@ -13,13 +13,15 @@ Christian Thurau (https://github.com/pzoccante/pymf/blob/master/pymf/)
 [1] Ding, C., Li, T. and Jordan, M.. Convex and Semi-Nonnegative Matrix Factorizations.
 IEEE Trans. on Pattern Analysis and Machine Intelligence 32(1), 45-55.
 """
+
 from __future__ import annotations
-from sun_topicmodel.utils import setup_logging
 
 import logging
 import logging.config
 
 import numpy as np
+
+from sun_topicmodel.utils import setup_logging
 
 __all__ = ["PyMFBase"]
 _EPS = np.finfo(float).eps
@@ -59,19 +61,23 @@ class PyMFBase:
 
     def _init_h(self):
         """Initialize H matrix."""
-        raise NotImplementedError("The method _init_h() must be implemented in the subclass.")
+        message = "The method _init_h() must be implemented in the subclass."
+        raise NotImplementedError(message)
 
     def _init_w(self):
         """Initialize W matrix."""
-        raise NotImplementedError("The method _init_w() must be implemented in the subclass.")
+        message = "The method _init_w() must be implemented in the subclass."
+        raise NotImplementedError(message)
 
     def _update_h(self):
         """Update H matrix."""
-        raise NotImplementedError("The method _update_h() must be implemented in the subclass.")
+        message = "The method _update_h() must be implemented in the subclass."
+        raise NotImplementedError(message)
 
     def _update_w(self):
         """Update W matrix."""
-        raise NotImplementedError("The method _update_w() must be implemented in the subclass.")
+        message = "The method _update_w() must be implemented in the subclass."
+        raise NotImplementedError(message)
 
     def _converged(self, i):
         """
@@ -142,7 +148,7 @@ class PyMFBase:
 
         if compute_err:
             self.ferr = np.zeros(niter)
-        
+
         if compute_topic_err:
             self.topic_err = np.zeros(niter)
 
@@ -157,11 +163,13 @@ class PyMFBase:
             if compute_err:
                 self.ferr[i] = np.linalg.norm(self.data - np.dot(self.W, self.H), "fro")
                 self._logger.info("FN: %s (%s / %s)", self.ferr[i], i + 1, niter)
-            if compute_topic_err: 
+            if compute_topic_err:
                 # Calculate the L2 norm for each row of W and W_old, and get the maximum difference
                 # self.topic_err[i] = np.max(np.abs(self.W - W_old))
                 self.topic_err[i] = np.max(np.linalg.norm(self.W - W_old, axis=1))
-                self._logger.info("W (Max Doc Update): %s (%s / %s)", self.topic_err[i], i + 1, niter)
+                self._logger.info(
+                    "W (Max Doc Update): %s (%s / %s)", self.topic_err[i], i + 1, niter
+                )
             else:
                 self._logger.info("Iteration: (%s, %s)", i + 1, niter)
 
@@ -169,7 +177,7 @@ class PyMFBase:
             if i > 1 and compute_err and self._converged(i):
                 self.ferr = self.ferr[:i]
                 break
-        
+
             if i > 1 and compute_topic_err and self.topic_err[i] < topic_err_tol:
                 self.topic_err = self.topic_err[:i]
                 break

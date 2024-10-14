@@ -2,6 +2,9 @@
 Collection of shared utility functions for the sun_topicmodel package.
 
 """
+
+from __future__ import annotations
+
 import logging
 
 

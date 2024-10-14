@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import os
+import re
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from sun_topicmodel import SunTopic
+from sun_topicmodel.suntopic import SunTopic
 
 sample_size = 10
 data_dim = 20
@@ -13,13 +14,15 @@ data_dim = 20
 # Create a random number generator
 rng = np.random.default_rng(seed=42)
 
+
 @pytest.fixture()
 def sample_X():
     return rng.random((sample_size, data_dim))  # Sample data of shape (10, 20)
 
+
 @pytest.fixture()
 def sample_Y():
-    return rng.random(sample_size)  
+    return rng.random(sample_size)
 
 
 def test_initialization(sample_X, sample_Y, alpha=0.5, num_bases=5):
@@ -43,20 +46,31 @@ def test_initialization(sample_X, sample_Y, alpha=0.5, num_bases=5):
 @pytest.mark.parametrize("alpha", [-0.1, 2])
 def test_initialization_with_invalid_alpha(sample_X, sample_Y, alpha):
     # Test initialization of SunTopic instance with invalid alpha
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=re.escape("Alpha must be in [0,1]")):
         SunTopic(sample_Y, sample_X, alpha=alpha, num_bases=5)
 
 
-@pytest.mark.parametrize("num_bases", [0, 21, 10.5])
-def test_initialization_with_invalid_num_bases(sample_X, sample_Y, num_bases):
+@pytest.mark.parametrize(
+    ("num_bases", "expected_message"),
+    [
+        (0, "Number of bases must be at least 1"),
+        (21, "Number of bases must be less than the dimensionality of X.shape[1]"),
+        (10.5, "Number of bases must be an integer"),
+    ],
+)
+def test_initialization_with_invalid_num_bases(
+    sample_X, sample_Y, num_bases, expected_message
+):
     # Test initialization of SunTopic instance with invalid num_bases
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=re.escape(expected_message)):
         SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=num_bases)
 
 
 def test_initialization_with_invalid_num_samples(sample_X, sample_Y):
     # Test initialization of SunTopic instance with invalid num_samples
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Y and X must have the same number of samples"
+    ):
         SunTopic(sample_Y, sample_X[:5], alpha=0.5, num_bases=5)
 
 
@@ -69,13 +83,17 @@ def test_fit(sample_X, sample_Y):
     assert (model.get_coefficients() == model.model.H).all()
     assert (model.get_topics() == model.model.W).all()
 
+
 def test_fit_standardization(sample_X, sample_Y):
     # Test fit method of SunTopic instance with standardization
     model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10, standardize=True)
     # Ensure that the standard deviation is approximately 1 after standardization
     coefficients_std = np.std(model.get_topics(), axis=0)  # Added () to method call
-    assert np.allclose(coefficients_std, 1, atol=1e-1), "Standardized coefficients should have a standard deviation of approximately 1"
+    assert np.allclose(
+        coefficients_std, 1, atol=1e-1
+    ), "Standardized coefficients should have a standard deviation of approximately 1"
+
 
 def test_fit_no_standardization(sample_X, sample_Y):
     # Test fit method of SunTopic instance without standardization
@@ -83,18 +101,20 @@ def test_fit_no_standardization(sample_X, sample_Y):
     model.fit(niter=10, standardize=False)
     # Ensure that the standard deviation is not approximately 1 when standardization is off
     coefficients_std = np.std(model.get_topics(), axis=0)  # Added () to method call
-    assert not np.allclose(coefficients_std, 1, atol=1e-1), "Non-standardized coefficients should not have a standard deviation close to 1"
+    assert not np.allclose(
+        coefficients_std, 1, atol=1e-1
+    ), "Non-standardized coefficients should not have a standard deviation close to 1"
 
 
 def test_get_top_docs_idx(sample_X, sample_Y):
     # Test get_top_docs method of SunTopic instance
     model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Topic index out of bounds"):
         model.get_top_docs_idx(topic=10, n_docs=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Number of top documents must be an integer"):
         model.get_top_docs_idx(topic=1, n_docs=10.5)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Number of top documents must be at least 1"):
         model.get_top_docs_idx(topic=1, n_docs=-5)
     top_docs = model.get_top_docs_idx(topic=1, n_docs=10)
     assert len(top_docs) == 10
@@ -110,7 +130,7 @@ def test_save_load(sample_X, sample_Y, random_state):
     model.fit(niter=10)
     model.save(filename="test_model.npz")
     loaded_model = SunTopic.load(filename="test_model.npz")
-    os.remove("test_model.npz")
+    Path("test_model.npz").unlink()
     assert np.allclose(model.data, loaded_model.data)
     assert model.num_bases == loaded_model.num_bases
     assert model.alpha == loaded_model.alpha
@@ -135,8 +155,30 @@ def test_predict_with_invalid_X_new(sample_X, sample_Y):
     model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
     model.fit(niter=10)
     X_new = rng.random((5, 21))
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match=re.escape("X_new.shape[1] must be equal to X.shape[1]")
+    ):
         model.predict(X_new)
+
+
+def test_predict_with_cvxpy(sample_X, sample_Y):
+    # Test predict method of SunTopic instance with cvxpy solver
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    model.fit(niter=10)
+    X_new = rng.random((5, data_dim))
+    Y_pred = model.predict(X_new, cvxpy=True)
+    assert Y_pred.shape == (5,)
+
+
+def test_predict_with_invalid_solver(sample_X, sample_Y):
+    # Test predict method of SunTopic instance with invalid solver
+    model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
+    model.fit(niter=10)
+    X_new = rng.random((5, data_dim))
+    with pytest.raises(
+        ValueError, match=re.escape("Solver must be either 'ECOS' or 'SCS'")
+    ):
+        model.predict(X_new, cvxpy=True, solver="invalid_solver")
 
 
 def test_predict_with_single_X_new(sample_X, sample_Y):
@@ -186,14 +228,23 @@ def test_hyperparam_cv():
     assert model_parallel.cv_values["alpha_range"] == [0.1, 0.5, 0.9]
     assert model_parallel.cv_values["num_base_range"] == [2, 4, 6]
     assert model_parallel.cv_values["folds"] == 3
-    assert ((model_parallel.cv_values["errors"] >= 0) & (model_parallel.cv_values["errors"] <= 1)).all()
+    assert (
+        (model_parallel.cv_values["errors"] >= 0)
+        & (model_parallel.cv_values["errors"] <= 1)
+    ).all()
     assert model.cv_values["errors"].all() == model_parallel.cv_values["errors"].all()
 
 
 def test_cv_summary_without_fit(sample_X, sample_Y):
     # Test summary method of SunTopic instance without fit
     model = SunTopic(sample_Y, sample_X, alpha=0.5, num_bases=4)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Cross-validation errors have not been computed yet. \
+Call hyperparam_cv() first."
+        ),
+    ):
         model.cv_summary()
 
 
@@ -202,7 +253,13 @@ def test_cv_mse_plot():
     Y = rng.random(100)
     X = rng.random((100, 200))
     model = SunTopic(Y, X, alpha=0.5, num_bases=4)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Cross-validation errors have not been computed yet. \
+Call hyperparam_cv() first."
+        ),
+    ):
         model.cv_mse_plot()
     model.hyperparam_cv(
         alpha_range=[0.1, 0.5, 0.9],

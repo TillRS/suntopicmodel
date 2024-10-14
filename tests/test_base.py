@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from sun_topicmodel import PyMFBase
+from sun_topicmodel.base import PyMFBase
 
 # Create a random number generator
 rng = np.random.default_rng(seed=42)

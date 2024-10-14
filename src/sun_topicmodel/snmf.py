@@ -12,6 +12,7 @@ Note: This implementation builds directly on an unsupported implementation of
 Christian Thurau (https://github.com/pzoccante/pymf/blob/master/pymf/)
 
 """
+
 from __future__ import annotations
 
 import numpy as np

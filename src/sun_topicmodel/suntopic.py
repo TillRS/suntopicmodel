@@ -5,7 +5,7 @@ SUN Topic Model
 
 Authors: Till R. Saenger, ORFE Princeton
 
-This class implements the SUN Topic Model, a semi-supervised topic model that incorporates a response variable into the topic modeling process. 
+This class implements the SUN Topic Model, a semi-supervised topic model that incorporates a response variable into the topic modeling process.
 This model is first introduced in "AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments".
 
 The model is based on the Convex and Semi-Nonnegative Matrix Factorization (SNMF) algorithm by Ding et al. [1] and its implementation in the PyMF library [2].
@@ -16,14 +16,14 @@ from __future__ import annotations
 import logging
 import logging.config
 
+import cvxpy as cp
 import matplotlib.pyplot as plt
 import numpy as np
-import cvxpy as cp
-from tqdm import tqdm
 from joblib import Parallel, delayed
 from matplotlib import rc
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import KFold
+from tqdm import tqdm
 
 from sun_topicmodel.snmf import SNMF
 from sun_topicmodel.utils import setup_logging
@@ -42,7 +42,7 @@ class SunTopic(SNMF):
         Parameters
         ----------
         X : np.ndarray
-            Input data array of shape (n, d) where `n` is the number of samples and 
+            Input data array of shape (n, d) where `n` is the number of samples and
             `d` is the dimension of each data sample.
         Y : np.ndarray
             Response variable array of shape (n,) where `n` is the number of samples.
@@ -55,21 +55,23 @@ class SunTopic(SNMF):
         """
 
         if alpha < 0 or alpha > 1:
-            msg = "Alpha must be in [0,1]"
-            raise ValueError(msg)
+            message = "Alpha must be in [0,1]"
+            raise ValueError(message)
         if num_bases < 1:
-            msg = "Number of bases must be at least 1"
-            raise ValueError(msg)
+            message = "Number of bases must be at least 1"
+            raise ValueError(message)
         if num_bases > X.shape[1]:
-            msg = "Number of bases must be less than the dimensionality of X.shape[1]"
-            raise ValueError(msg)
+            message = (
+                "Number of bases must be less than the dimensionality of X.shape[1]"
+            )
+            raise ValueError(message)
         if num_bases != int(num_bases):
-            msg = "Number of bases must be an integer"
-            raise ValueError(msg)
+            message = "Number of bases must be an integer"
+            raise ValueError(message)
 
         if len(Y) != X.shape[0]:
-            msg = "Y and X must have the same number of samples"
-            raise ValueError(msg)
+            message = "Y and X must have the same number of samples"
+            raise ValueError(message)
 
         setup_logging(self)
 
@@ -84,18 +86,26 @@ class SunTopic(SNMF):
             "folds": None,
             "errors": None,
             "kf": None,
-            "random_state": random_state
+            "random_state": random_state,
         }
 
         X_scaled = np.sqrt(alpha) * X  # Scaling matrix X by the square root of alpha
-        Y_scaled = np.sqrt(1 - alpha) * np.array(Y).reshape(-1, 1)  # Scaling and reshaping Y
+        Y_scaled = np.sqrt(1 - alpha) * np.array(Y).reshape(
+            -1, 1
+        )  # Scaling and reshaping Y
         data = np.hstack((X_scaled, Y_scaled))
         self.data = data
         self.model = SNMF(data, num_bases, random_state=random_state)
         self.model.random_state = random_state
 
     def fit(
-        self, niter=100, verbose=False, compute_w=True, compute_h=True, compute_err=True, standardize = True
+        self,
+        niter=100,
+        verbose=False,
+        compute_w=True,
+        compute_h=True,
+        compute_err=True,
+        standardize=True,
     ):
         """
         Fit the SunTopic model to the data.
@@ -130,7 +140,6 @@ class SunTopic(SNMF):
             self.model.W = np.dot(self.model.W, np.linalg.inv(S))
             self.model.H = np.dot(S, self.model.H)
 
-
     def predict(
         self,
         X_new,
@@ -139,10 +148,10 @@ class SunTopic(SNMF):
         random_state=None,
         verbose=False,
         compute_err=False,
-        compute_topic_err = False,
-        topic_err_tol = 1e-3,
-        cvxpy = False,
-        solver = 'SCS',
+        compute_topic_err=False,
+        topic_err_tol=1e-3,
+        cvxpy=False,
+        solver="SCS",
     ):
         """
         Predict the response variable for new data X_new.
@@ -150,7 +159,7 @@ class SunTopic(SNMF):
         Parameters
         ----------
         X_new : np.ndarray
-            New data array of shape (n, d) where `n` is the number of samples and 
+            New data array of shape (n, d) where `n` is the number of samples and
             `d` is the dimension of each data sample.
         return_topics : bool
             Whether to return the topics.
@@ -176,46 +185,46 @@ class SunTopic(SNMF):
             X_new = X_new.reshape(1, -1)
 
         if X_new.shape[1] != self.X.shape[1]:
-            msg = "X_new.shape[1] must be equal to X.shape[1]"
-            raise ValueError(msg)
+            message = "X_new.shape[1] must be equal to X.shape[1]"
+            raise ValueError(message)
 
         if not hasattr(self.model, "H"):
-            msg = "Model has not been fitted yet. Call fit() first."
-            raise ValueError(msg)
-        
-        if solver not in ['ECOS', 'SCS']:
-            msg = "Solver must be either 'ECOS' or 'SCS'"
-            raise ValueError(msg)
+            message = "Model has not been fitted yet. Call fit() first."
+            raise ValueError(message)
+
+        if solver not in ["ECOS", "SCS"]:
+            message = "Solver must be either 'ECOS' or 'SCS'"
+            raise ValueError(message)
 
         data_new = np.sqrt(self.alpha) * X_new
 
         if cvxpy:
             # use cvxpy to predict
-            H = self.model.H[:,:-1]
+            H = self.model.H[:, :-1]
             W = cp.Variable((data_new.shape[0], self.num_bases), nonneg=True)
 
-            objective = cp.Minimize(cp.norm(data_new - W @ H, 'fro'))
+            objective = cp.Minimize(cp.norm(data_new - W @ H, "fro"))
             problem = cp.Problem(objective)
-            if solver == 'SCS':
+            if solver == "SCS":
                 problem.solve(solver=cp.SCS)
-            elif solver == 'ECOS':
+            elif solver == "ECOS":
                 problem.solve(solver=cp.ECOS)
 
             W_pred = W.value
             Y_pred = np.dot(W_pred, self.model.H[:, -1])
-        
+
         else:
             # use SNMF to predict
             self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
-            self._model_pred.H = self.model.H[:,:-1]
+            self._model_pred.H = self.model.H[:, :-1]
 
             self._model_pred.factorize(
-                niter=niter, 
-                verbose=verbose, 
-                compute_h=False, 
-                compute_err=compute_err, 
-                compute_topic_err=compute_topic_err, 
-                topic_err_tol=topic_err_tol
+                niter=niter,
+                verbose=verbose,
+                compute_h=False,
+                compute_err=compute_err,
+                compute_topic_err=compute_topic_err,
+                topic_err_tol=topic_err_tol,
             )
 
             W_pred = self._model_pred.W
@@ -265,34 +274,34 @@ class SunTopic(SNMF):
             Array of indices of the top documents.
         """
         if not hasattr(self.model, "W"):
-            msg = "Model has not been fitted yet. Call fit() first."
-            raise ValueError(msg)
+            message = "Model has not been fitted yet. Call fit() first."
+            raise ValueError(message)
 
         if n_docs < 1:
-            msg = "Number of iterations must be at least 1"
-            raise ValueError(msg)
+            message = "Number of top documents must be at least 1"
+            raise ValueError(message)
         if n_docs != int(n_docs):
-            msg = "Number of iterations must be an integer"
-            raise ValueError(msg)
+            message = "Number of top documents must be an integer"
+            raise ValueError(message)
         if n_docs > self.model.H.shape[1]:
-            msg = "Number of top documents must be less than the total number of documents"
-            raise ValueError(msg)
+            message = "Number of top documents must be less than the total number of documents"
+            raise ValueError(message)
 
         if topic < 0 or topic >= self.model.W.shape[1]:
-            msg = "Topic index out of bounds"
-            raise ValueError(msg)
-    
-        topic_weights = self.model.W[:, topic]
-        top_indices_desc  = np.argsort(topic_weights)[::-1]
-        top_n_docs_indices = top_indices_desc[:n_docs]
-        return top_n_docs_indices
+            message = "Topic index out of bounds"
+            raise ValueError(message)
 
+        topic_weights = self.model.W[:, topic]
+        top_indices_desc = np.argsort(topic_weights)[::-1]
+        return top_indices_desc[:n_docs]
 
     def summary(self):
         """
         Print a summary of the SunTopic model.
         """
-        predicted_values = np.dot(self.model.W, self.model.H[:, -1]) / np.sqrt(1 - self.alpha)
+        predicted_values = np.dot(self.model.W, self.model.H[:, -1]) / np.sqrt(
+            1 - self.alpha
+        )
         in_sample_mse = mean_squared_error(self.Y, predicted_values)
 
         print(
@@ -307,9 +316,8 @@ class SunTopic(SNMF):
             Frobenius norm error: {np.linalg.norm(self.data - self.model.W @ self.model.H)}
             In-sample MSE: {in_sample_mse}
             Prediction coefficients: {self.model.H[:, -1]}
-            """
+            """  # noqa: T201
         )
-
 
     def save(self, filename):
         """
@@ -319,7 +327,7 @@ class SunTopic(SNMF):
         ----------
         filename : str
             Name of the file to save the model.
-        
+
         """
         np.savez(
             filename,
@@ -376,7 +384,7 @@ class SunTopic(SNMF):
         cvxpy=True,
         pred_niter=100,
         compute_topic_err=False,
-        topic_err_tol=1e-2
+        topic_err_tol=1e-2,
     ):
         """
         Perform cross-validation for different alpha and num_bases values.
@@ -408,26 +416,39 @@ class SunTopic(SNMF):
         """
         for alpha in alpha_range:
             if alpha < 0 or alpha > 1:
-                raise ValueError("Alpha must be in [0,1]")
+                message = "Alpha must be in [0,1]"
+                raise ValueError(message)
 
         for num_bases in num_bases_range:
-            if num_bases < 1 or num_bases > self.X.shape[1] or num_bases != int(num_bases):
-                raise ValueError("Each number of bases must be an integer between 1 and X.shape[1]")
+            if (
+                num_bases < 1
+                or num_bases > self.X.shape[1]
+                or num_bases != int(num_bases)
+            ):
+                message = (
+                    "Each number of bases must be an integer between 1 and X.shape[1]"
+                )
+                raise ValueError(message)
 
         if cv_folds < 2 or cv_folds != int(cv_folds) or cv_folds > len(self.Y):
-            raise ValueError("Number of folds must be an integer between 2 and the number of samples")
+            message = (
+                "Number of folds must be an integer between 2 and the number of samples"
+            )
+            raise ValueError(message)
 
         if verbose:
             self._logger.setLevel(logging.INFO)
         else:
             self._logger.setLevel(logging.ERROR)
 
-        self.cv_values.update({
-            "alpha_range": alpha_range,
-            "num_base_range": num_bases_range,
-            "folds": cv_folds,
-            "random_state": random_state
-        })
+        self.cv_values.update(
+            {
+                "alpha_range": alpha_range,
+                "num_base_range": num_bases_range,
+                "folds": cv_folds,
+                "random_state": random_state,
+            }
+        )
 
         self.cv_values["kf"] = KFold(
             n_splits=cv_folds, random_state=self.cv_values["random_state"], shuffle=True
@@ -442,31 +463,37 @@ class SunTopic(SNMF):
             with tqdm(total=total_iterations, desc="Cross-Validation Progress") as pbar:
                 for i, num_bases in enumerate(num_bases_range):
                     for j, alpha in enumerate(alpha_range):
-                        for k, (train_index, test_index) in enumerate(self.cv_values["kf"].split(self.Y)):
+                        for k, (train_index, test_index) in enumerate(
+                            self.cv_values["kf"].split(self.Y)
+                        ):
                             self.cv_values["errors"][i, j, k] = _predict_Y_mse(
-                                                                        self.Y, 
-                                                                        self.X, 
-                                                                        self.cv_values["random_state"],
-                                                                        alpha=alpha,
-                                                                        num_bases=num_bases,
-                                                                        train_index=train_index,
-                                                                        test_index=test_index,
-                                                                        niter=niter,
-                                                                        pred_niter=pred_niter,
-                                                                        cvxpy=cvxpy,
-                                                                        compute_topic_err=compute_topic_err,
-                                                                        topic_err_tol=topic_err_tol
+                                self.Y,
+                                self.X,
+                                self.cv_values["random_state"],
+                                alpha=alpha,
+                                num_bases=num_bases,
+                                train_index=train_index,
+                                test_index=test_index,
+                                niter=niter,
+                                pred_niter=pred_niter,
+                                cvxpy=cvxpy,
+                                compute_topic_err=compute_topic_err,
+                                topic_err_tol=topic_err_tol,
                             )
                             pbar.update(1)
         else:
-            num_cores = -1 if len(alpha_range) > 1 else 1  # Use all available cores if more than 1 alpha
+            num_cores = (
+                -1 if len(alpha_range) > 1 else 1
+            )  # Use all available cores if more than 1 alpha
 
             try:
-                with tqdm(total=total_iterations, desc="Cross-Validation Progress") as pbar:
+                with tqdm(
+                    total=total_iterations, desc="Cross-Validation Progress"
+                ) as pbar:
                     results = Parallel(n_jobs=num_cores)(
                         delayed(_predict_Y_mse)(
-                            self.Y, 
-                            self.X, 
+                            self.Y,
+                            self.X,
                             self.cv_values["random_state"],
                             alpha=alpha,
                             num_bases=num_bases,
@@ -476,14 +503,17 @@ class SunTopic(SNMF):
                             pred_niter=pred_niter,
                             cvxpy=cvxpy,
                             compute_topic_err=compute_topic_err,
-                            topic_err_tol=topic_err_tol
+                            topic_err_tol=topic_err_tol,
                         )
                         for i, num_bases in enumerate(num_bases_range)
                         for j, alpha in enumerate(alpha_range)
-                        for k, (train_index, test_index) in enumerate(self.cv_values["kf"].split(self.Y))
+                        for k, (train_index, test_index) in enumerate(
+                            self.cv_values["kf"].split(self.Y)
+                        )
                     )
             except Exception as e:
-                raise RuntimeError(f"Parallel execution failed: {e}")
+                message = f"Parallel execution failed: {e}"
+                raise RuntimeError(message)
 
             # Ensure results is properly assigned before accessing it
             if results:
@@ -495,9 +525,8 @@ class SunTopic(SNMF):
                             self.cv_values["errors"][i, j, k] = results[idx]
                             idx += 1
             else:
-                raise RuntimeError("No results returned from Parallel execution")
-
-
+                message = "No results returned from Parallel execution"
+                raise RuntimeError(message)
 
     def cv_summary(self, top_hyperparam_combinations=3):
         """
@@ -510,8 +539,9 @@ class SunTopic(SNMF):
         """
 
         if self.cv_values["random_state"] is None:
-            msg = "Cross-validation errors have not been computed yet. Call hyperparam_cv() first."
-            raise ValueError(msg)
+            message = "Cross-validation errors have not been computed yet. \
+Call hyperparam_cv() first."
+            raise ValueError(message)
 
         mean_cv_errors = np.mean(self.cv_values["errors"], axis=2)
         min_idx = np.unravel_index(
@@ -527,13 +557,15 @@ class SunTopic(SNMF):
             Number of folds: {self.cv_values["folds"]}
             CV Random state: {self.cv_values["random_state"]}
             {'=' * 50}
-            """
+            """  # noqa: T201
         )
 
         for i in range(top_hyperparam_combinations):
             print(
-                f"Top {i+1} hyperparam combinations - num_bases: {self.cv_values['num_base_range'][min_idx[0][i]]:.2f}, alpha: {self.cv_values['alpha_range'][min_idx[1][i]]:.2f}, MSE: {mean_cv_errors[min_idx[0][i], min_idx[1][i]]:.4f}"
-            )
+                f"Top {i+1} hyperparam combinations - num_bases: {self.cv_values['num_base_range'][min_idx[0][i]]:.2f},\
+alpha: {self.cv_values['alpha_range'][min_idx[1][i]]:.2f}, \
+MSE: {mean_cv_errors[min_idx[0][i], min_idx[1][i]]:.4f}"
+            )  # noqa: T201
 
     def cv_mse_plot(
         self,
@@ -558,10 +590,11 @@ class SunTopic(SNMF):
 
         """
         if self.cv_values["random_state"] is None:
-            msg = "Cross-validation errors have not been computed yet. Call hyperparam_cv() first."
-            raise ValueError(msg)
+            message = "Cross-validation errors have not been computed yet. \
+Call hyperparam_cv() first."
+            raise ValueError(message)
 
-        rc("font", **{"family": "serif", "serif": ["Computer Modern"]})
+        rc("font", family="serif", serif=["Computer Modern"])
         plt.rcParams["text.usetex"] = True
 
         mean_cv_errors = np.mean(self.cv_values["errors"], axis=2)
@@ -584,21 +617,22 @@ class SunTopic(SNMF):
         if return_plot:
             return fig
         plt.show()
+        return None
 
 
 def _predict_Y_mse(
-    Y, 
-    X, 
-    cv_random_state, 
-    alpha, 
-    num_bases, 
-    train_index, 
-    test_index, 
-    niter, 
-    pred_niter, 
-    cvxpy, 
-    compute_topic_err, 
-    topic_err_tol
+    Y,
+    X,
+    cv_random_state,
+    alpha,
+    num_bases,
+    train_index,
+    test_index,
+    niter,
+    pred_niter,
+    cvxpy,
+    compute_topic_err,
+    topic_err_tol,
 ):
     """
     Fuction for cross-validation predictions as part of the hyperparam_cv method.
@@ -610,7 +644,7 @@ def _predict_Y_mse(
     Y : np.ndarray
         Response variable array of shape (n,) where `n` is the number of samples.
     X : np.ndarray
-        Input data array of shape (n, d) where `n` is the number of samples and 
+        Input data array of shape (n, d) where `n` is the number of samples and
         `d` is the dimension of each data sample.
     cv_random_state : int
         Seed for the random number generator.
@@ -622,7 +656,7 @@ def _predict_Y_mse(
         Indices of the training data.
     test_index : np.ndarray
         Indices of the test data.
-    niter : int 
+    niter : int
         Number of iterations for the model fitting.
     pred_niter : int
         Number of iterations for the prediction.
@@ -632,7 +666,7 @@ def _predict_Y_mse(
         Whether to compute the topic error.
     topic_err_tol : float
         Early stopping tolerance for topic error.
-    
+
     Returns
     -------
     float
@@ -647,13 +681,12 @@ def _predict_Y_mse(
     )
     model.fit(niter=niter, verbose=False, compute_err=False)
     Y_pred = model.predict(
-        X[test_index], 
-        random_state=cv_random_state, 
+        X[test_index],
+        random_state=cv_random_state,
         cvxpy=cvxpy,
-        niter=pred_niter, 
-        compute_err=False, 
+        niter=pred_niter,
+        compute_err=False,
         compute_topic_err=compute_topic_err,
-        topic_err_tol=topic_err_tol
+        topic_err_tol=topic_err_tol,
     )
-    mse = mean_squared_error(Y[test_index], Y_pred)
-    return mse
+    return mean_squared_error(Y[test_index], Y_pred)
