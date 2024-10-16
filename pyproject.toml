@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sun_topicmodel"
+name = "suntm"
 version = "0.0.1"
 authors = [
   { name="Till Raphael Saenger", email="till.saenger@gmail.com" },
@@ -27,8 +27,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/tillrs/sun_topicmodel"
-Issues = "https://github.com/tillrs/sun_topicmodel/issues"
+Homepage = "https://github.com/tillrs/suntopicmodel"
+Issues = "https://github.com/tillrs/suntopicmodel/issues"
 
 [project.optional-dependencies]
 test = [
