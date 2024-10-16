@@ -3,7 +3,7 @@ Python implementation of the SUpervised Nonnegative matrix factorization (SUN) t
 Pre-print available here: https://arxiv.org/abs/2410.08917.
 
 ## Installation
-To install this package, install it using `pip`.
+To use this package, install it using `pip`.
 ```bash
 pip install suntm
 ```
