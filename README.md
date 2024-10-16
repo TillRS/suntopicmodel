@@ -1,4 +1,4 @@
-# SUN_TopicModel
+# suntm Package
 Python implementation of the SUpervised Nonnegative matrix factorization (SUN) topic model for topic discovery and effect estimation from "AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments".
 Pre-print available here: https://arxiv.org/abs/2410.08917.
 
