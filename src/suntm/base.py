@@ -21,7 +21,7 @@ import logging.config
 
 import numpy as np
 
-from sun_topicmodel.utils import setup_logging
+from suntm.utils import setup_logging
 
 __all__ = ["PyMFBase"]
 _EPS = np.finfo(float).eps

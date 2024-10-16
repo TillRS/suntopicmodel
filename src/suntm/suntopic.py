@@ -25,8 +25,8 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import KFold
 from tqdm import tqdm
 
-from sun_topicmodel.snmf import SNMF
-from sun_topicmodel.utils import setup_logging
+from suntm.snmf import SNMF
+from suntm.utils import setup_logging
 
 
 class SunTopic(SNMF):

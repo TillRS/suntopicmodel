@@ -1,5 +1,5 @@
 """
-Collection of shared utility functions for the sun_topicmodel package.
+Collection of shared utility functions for the suntm package.
 
 """
 

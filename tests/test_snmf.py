@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from sklearn.utils._param_validation import InvalidParameterError
 
-from sun_topicmodel.snmf import SNMF
+from suntm.snmf import SNMF
 
 # Create a random number generator
 rng = np.random.default_rng(seed=42)

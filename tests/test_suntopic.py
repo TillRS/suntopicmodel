@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from sun_topicmodel.suntopic import SunTopic
+from suntm.suntopic import SunTopic
 
 sample_size = 10
 data_dim = 20

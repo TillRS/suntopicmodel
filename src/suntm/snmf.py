@@ -18,7 +18,7 @@ from __future__ import annotations
 import numpy as np
 from sklearn.cluster import KMeans
 
-from sun_topicmodel.base import PyMFBase
+from suntm.base import PyMFBase
 
 __all__ = ["SNMF"]
 
