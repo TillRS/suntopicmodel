@@ -1,15 +1,11 @@
 # SUN_TopicModel
 Python implementation of the SUpervised Nonnegative matrix factorization (SUN) topic model for topic discovery and effect estimation from "AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments".
-
-
+Pre-print available here: https://arxiv.org/abs/2410.08917.
 
 ## Installation
-To install this package, clone the repository and install it using pip.
-The current setup requires manual installation of the dependencies or using the `suntopic_env.yml` to create an environment.
+To install this package, install it using `pip`.
 ```bash
-git clone https://github.com/TillRS/SUN_TopicModel
-cd SUN_TopicModel
-pip install .
+pip install suntm
 ```
 
 ## Usage
@@ -56,6 +52,3 @@ This implementation builds directly on the relevant parts of [1]:
 The semi-nonnegative matrix factorization approach was developed by [2]:
 - C. H. Q. Ding, T. Li and M. I. Jordan, "Convex and Semi-Nonnegative Matrix Factorizations," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 32, no. 1, pp. 45-55, Jan. 2010, doi: 10.1109/TPAMI.2008.277.
 
-
-
-This repository is currently work in progress and **not ready** for final users.
