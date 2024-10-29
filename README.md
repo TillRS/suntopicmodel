@@ -43,6 +43,11 @@ Pytest test functions for the different class objects are collected in:
 - Relevant dependencies are included in `pyproject.toml`.
 - The CI setup is included in `.github/workflows/ci.yml`.
 
+## Citation
+If you use thise code, please cite:
+
+Saenger, T. R., Hinck, M., Grimmer, J., & Stewart, B. M. (2024). AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments. arXiv preprint arXiv:2410.08917.
+
 
 ## Acknowledgements
 
