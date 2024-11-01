@@ -481,36 +481,42 @@ class SunTopic(SNMF):
                                 topic_err_tol=topic_err_tol,
                             )
                             pbar.update(1)
+
         else:
             num_cores = (
                 -1 if len(alpha_range) > 1 else 1
             )  # Use all available cores if more than 1 alpha
 
+            # Run the main snippet with tqdm integrated directly
             try:
-                with tqdm(
-                    total=total_iterations, desc="Cross-Validation Progress"
-                ) as pbar:
-                    results = Parallel(n_jobs=num_cores)(
-                        delayed(_predict_Y_mse)(
-                            self.Y,
-                            self.X,
-                            self.cv_values["random_state"],
-                            alpha=alpha,
-                            num_bases=num_bases,
-                            train_index=train_index,
-                            test_index=test_index,
-                            niter=niter,
-                            pred_niter=pred_niter,
-                            cvxpy=cvxpy,
-                            compute_topic_err=compute_topic_err,
-                            topic_err_tol=topic_err_tol,
-                        )
-                        for i, num_bases in enumerate(num_bases_range)
-                        for j, alpha in enumerate(alpha_range)
-                        for k, (train_index, test_index) in enumerate(
-                            self.cv_values["kf"].split(self.Y)
-                        )
+                results = list(
+                    tqdm(
+                        Parallel(return_as="generator", n_jobs=num_cores)(
+                            delayed(_predict_Y_mse)(
+                                self.Y,
+                                self.X,
+                                self.cv_values["random_state"],
+                                alpha=alpha,
+                                num_bases=num_bases,
+                                train_index=train_index,
+                                test_index=test_index,
+                                niter=niter,
+                                pred_niter=pred_niter,
+                                cvxpy=cvxpy,
+                                compute_topic_err=compute_topic_err,
+                                topic_err_tol=topic_err_tol,
+                            )
+                            for i, num_bases in enumerate(num_bases_range)
+                            for j, alpha in enumerate(alpha_range)
+                            for k, (train_index, test_index) in enumerate(
+                                self.cv_values["kf"].split(self.Y)
+                            )
+                        ),
+                        total=total_iterations,
+                        desc="Cross-Validation Progress",
                     )
+                )
+
             except Exception as e:
                 message = f"Parallel execution failed: {e}"
                 raise RuntimeError(message)
