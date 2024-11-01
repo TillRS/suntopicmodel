@@ -39,7 +39,7 @@ Pytest test functions for the different class objects are collected in:
 - **`test_snmf.py`:** Tests for semi-nonnegative matrix factorization implementation.
 - **`test_tuntopic.py`:** Tests for topic modeling functionalities.
 
-## Dependencies and setup
+##### Dependencies and setup
 - Relevant dependencies are included in `pyproject.toml`.
 - The CI setup is included in `.github/workflows/ci.yml`.
 
