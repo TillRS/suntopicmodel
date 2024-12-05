@@ -46,8 +46,7 @@ Pytest test functions for the different class objects are collected in:
 ## Citation
 If you use thise code, please cite:
 
-Saenger, T. R., Hinck, M., Grimmer, J., & Stewart, B. M. (2024). AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments. arXiv preprint arXiv:2410.08917.
-
+Till Raphael Saenger, Musashi Hinck, Justin Grimmer, and Brandon M. Stewart. 2024. [AutoPersuade: A Framework for Evaluating and Explaining Persuasive Arguments](https://aclanthology.org/2024.emnlp-main.913/). In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing, pages 16325–16342, Miami, Florida, USA. Association for Computational Linguistics.
 
 ## Acknowledgements
 
