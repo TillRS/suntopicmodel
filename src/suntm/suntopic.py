@@ -145,7 +145,6 @@ class SunTopic(SNMF):
         X_new,
         return_topics=False,
         niter=100,
-        random_state=None,
         verbose=False,
         compute_err=False,
         compute_topic_err=False,
@@ -165,8 +164,6 @@ class SunTopic(SNMF):
             Whether to return the topics.
         niter : int
             Number of iterations for the prediction.
-        random_state : int
-            Seed for the random initialization of the inferred W.
         verbose : bool
             Whether to print progress messages.
         compute_err : bool
@@ -197,6 +194,7 @@ class SunTopic(SNMF):
             raise ValueError(message)
 
         data_new = np.sqrt(self.alpha) * X_new
+        random_state = (self.model.random_state,)
 
         if cvxpy:
             # use cvxpy to predict
