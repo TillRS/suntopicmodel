@@ -16,7 +16,6 @@ Christian Thurau (https://github.com/pzoccante/pymf/blob/master/pymf/)
 from __future__ import annotations
 
 import numpy as np
-from sklearn.cluster import KMeans
 
 from suntm.base import PyMFBase
 
@@ -55,29 +54,36 @@ class SNMF(PyMFBase):
         """Initialize W using k-means ++"""
         self.W = np.zeros((self._num_samples, self._num_bases))
         if self.data.shape[0] >= self._num_bases:
-            km = KMeans(
-                n_clusters=self._num_bases,
-                random_state=self.random_state,
-                n_init="auto",
-                init="k-means++",
-            ).fit(self.data)
-            assign = km.labels_
-            self._logger.info("SNMF - Initial Assignment: %s", assign)
+            # km = KMeans(
+            #     n_clusters=self._num_bases,
+            #     random_state=self.random_state,
+            #     n_init="auto",
+            #     init="k-means++",
+            # ).fit(self.data)
+            # assign = km.labels_
+            # self._logger.info("SNMF - Initial Assignment: %s", assign)
 
-            num_i = np.zeros(self._num_bases)
-            for i in range(self._num_bases):
-                num_i[i] = len(np.where(assign == i)[0])
+            # num_i = np.zeros(self._num_bases)
+            # for i in range(self._num_bases):
+            #     num_i[i] = len(np.where(assign == i)[0])
 
-            self.W[range(len(assign)), assign] = 1.0
+            # self.W[range(len(assign)), assign] = 1.0
             self.W += np.ones((self._num_samples, self._num_bases)) * 0.2
 
         else:
             self.W = np.ones((self._num_samples, self._num_bases)) * 0.2
 
-    def _update_h(self):
-        H1 = np.dot(self.W.T, self.W)
+    def _update_h(self, S=None):
+        if S is None:
+            H1 = np.dot(self.W.T, self.W)
+        else:
+            H1 = np.dot(np.dot(self.W.T, S), self.W)
+        # H1 = np.dot(self.W.T, self.W)
         H2 = np.dot(self.W.T, self.data)
-        self.H = np.linalg.solve(H1, H2)
+        try:
+            self.H = np.linalg.solve(H1, H2)
+        except np.linalg.LinAlgError:
+            self.H = np.dot(np.linalg.pinv(H1), H2)
 
     def _update_w(self):
         def separate_positive(m):

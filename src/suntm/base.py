@@ -104,6 +104,7 @@ class PyMFBase:
         compute_err=False,
         compute_topic_err=False,
         topic_err_tol=10**-2,
+        S=None,
     ):
         """Factorize s.t. WH = data
 
@@ -154,7 +155,7 @@ class PyMFBase:
 
         for i in range(niter):
             if compute_h:
-                self._update_h()
+                self._update_h(S)
 
             if compute_w:
                 W_old = self.W.copy()
