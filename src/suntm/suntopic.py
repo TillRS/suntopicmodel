@@ -194,7 +194,7 @@ class SunTopic(SNMF):
             raise ValueError(message)
 
         data_new = np.sqrt(self.alpha) * X_new
-        random_state = (self.model.random_state,)
+        random_state = self.model.random_state
 
         if cvxpy:
             # use cvxpy to predict
@@ -686,7 +686,6 @@ def _predict_Y_mse(
     model.fit(niter=niter, verbose=False, compute_err=False)
     Y_pred = model.predict(
         X[test_index],
-        random_state=cv_random_state,
         cvxpy=cvxpy,
         niter=pred_niter,
         compute_err=False,
