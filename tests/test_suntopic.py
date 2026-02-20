@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -271,3 +272,112 @@ Call hyperparam_cv() first."
     )
     fig = model.cv_mse_plot(return_plot=True)
     assert fig is not None
+
+
+# --- L1 prediction tests ---
+
+# Larger dataset for L1 tests to ensure stable optimization
+l1_sample_size = 50
+l1_data_dim = 20
+l1_rng = np.random.default_rng(seed=99)
+l1_X = l1_rng.random((l1_sample_size, l1_data_dim))
+l1_Y = l1_rng.random(l1_sample_size)
+
+
+@pytest.fixture()
+def fitted_model():
+    model = SunTopic(l1_Y, l1_X, alpha=0.5, num_bases=4, random_state=42)
+    model.fit(niter=50)
+    return model
+
+
+def test_predict_l1_batch_independence(fitted_model):
+    """Single-row predictions match full-batch and partial-batch predictions."""
+    X_new = l1_rng.random((6, l1_data_dim))
+
+    # Full batch
+    Y_full = fitted_model.predict(X_new, method="l1")
+
+    # One at a time
+    Y_single = np.array(
+        [fitted_model.predict(X_new[i], method="l1")[0] for i in range(6)]
+    )
+
+    # Partial batches
+    Y_part1 = fitted_model.predict(X_new[:3], method="l1")
+    Y_part2 = fitted_model.predict(X_new[3:], method="l1")
+    Y_partial = np.concatenate([Y_part1, Y_part2])
+
+    np.testing.assert_allclose(Y_full, Y_single, atol=1e-4)
+    np.testing.assert_allclose(Y_full, Y_partial, atol=1e-4)
+
+
+def test_predict_l1_sparsity(fitted_model):
+    """Higher l1_reg produces more near-zero entries in W."""
+    X_new = l1_rng.random((5, l1_data_dim))
+
+    _, W_low = fitted_model.predict(X_new, method="l1", l1_reg=0.0, return_topics=True)
+    _, W_high = fitted_model.predict(
+        X_new, method="l1", l1_reg=100.0, return_topics=True
+    )
+
+    zeros_low = np.sum(W_low < 1e-6)
+    zeros_high = np.sum(W_high < 1e-6)
+    assert zeros_high > zeros_low
+
+
+def test_predict_l1_return_topics(fitted_model):
+    """return_topics=True returns (Y_pred, W_pred) with W >= 0."""
+    X_new = l1_rng.random((5, l1_data_dim))
+    Y_pred, W_pred = fitted_model.predict(X_new, method="l1", return_topics=True)
+    assert np.all(np.isfinite(Y_pred))
+    assert Y_pred.shape == (5,)
+    assert W_pred.shape == (5, 4)
+    assert np.all(W_pred >= -1e-10)  # nonneg constraint
+
+
+def test_predict_l1_single_observation(fitted_model):
+    """1D input vector works."""
+    x = l1_rng.random(l1_data_dim)
+    Y_pred = fitted_model.predict(x, method="l1")
+    assert Y_pred.shape == (1,)
+    assert np.all(np.isfinite(Y_pred))
+
+
+def test_predict_l1_large_reg_warning(fitted_model):
+    """Very large l1_reg triggers warning about all-zero W."""
+    X_new = l1_rng.random((3, l1_data_dim))
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        fitted_model.predict(X_new, method="l1", l1_reg=1e12)
+        user_warnings = [x for x in w if issubclass(x.category, UserWarning)]
+        assert len(user_warnings) >= 1
+        assert "all zeros" in str(user_warnings[0].message).lower()
+
+
+def test_predict_backward_compat(fitted_model):
+    """cvxpy=True still works with deprecation warning."""
+    X_new = l1_rng.random((3, l1_data_dim))
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        Y_pred = fitted_model.predict(X_new, cvxpy=True)
+        dep_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+        assert len(dep_warnings) >= 1
+    assert Y_pred.shape == (3,)
+
+
+def test_predict_method_snmf(fitted_model):
+    """method='snmf' preserves old iterative behavior."""
+    X_new = l1_rng.random((3, l1_data_dim))
+    Y_pred = fitted_model.predict(X_new, method="snmf", niter=20)
+    assert Y_pred.shape == (3,)
+    assert np.all(np.isfinite(Y_pred))
+
+
+def test_predict_l1_reg_override(fitted_model):
+    """Explicit l1_reg in predict overrides the default."""
+    X_new = l1_rng.random((3, l1_data_dim))
+    _, W_default = fitted_model.predict(X_new, return_topics=True)
+    _, W_zero = fitted_model.predict(X_new, return_topics=True, l1_reg=0.0)
+    # With different l1_reg, W should generally differ
+    assert not np.allclose(W_default, W_zero, atol=1e-6)

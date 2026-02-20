@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import logging.config
+import warnings
 
 import cvxpy as cp
 import matplotlib.pyplot as plt
@@ -151,6 +152,8 @@ class SunTopic(SNMF):
         topic_err_tol=1e-3,
         cvxpy=False,
         solver="SCS",
+        method=None,
+        l1_reg=0.01,
     ):
         """
         Predict the response variable for new data X_new.
@@ -163,7 +166,7 @@ class SunTopic(SNMF):
         return_topics : bool
             Whether to return the topics.
         niter : int
-            Number of iterations for the prediction.
+            Number of iterations for the prediction (only used with method="snmf").
         verbose : bool
             Whether to print progress messages.
         compute_err : bool
@@ -173,10 +176,32 @@ class SunTopic(SNMF):
         topic_err_tol : float
             Early stopping tolerance for topic error.
         cvxpy : bool
-            Whether to use cvxpy for prediction instead of closed form updating steps.
+            Deprecated. Use method="cvxpy" instead.
         solver : str
             Solver to use for cvxpy optimization. Must be either 'ECOS' or 'SCS'.
+        method : str, optional
+            Prediction method: "l1" (default), "cvxpy" (legacy batch), or "snmf"
+            (legacy iterative). If not specified and cvxpy is not True, defaults
+            to "l1".
+        l1_reg : float
+            L1 regularization strength for the "l1" method. Default 0.01.
         """
+        # Resolve method from legacy cvxpy parameter
+        if method is None:
+            if cvxpy:
+                warnings.warn(
+                    "cvxpy=True is deprecated. Use method='cvxpy' instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                method = "cvxpy"
+            else:
+                method = "l1"
+
+        if method not in ("l1", "cvxpy", "snmf"):
+            message = "method must be 'l1', 'cvxpy', or 'snmf'"
+            raise ValueError(message)
+
         # Reshape singular observation to matrix
         if X_new.ndim == 1:
             X_new = X_new.reshape(1, -1)
@@ -196,8 +221,28 @@ class SunTopic(SNMF):
         data_new = np.sqrt(self.alpha) * X_new
         random_state = self.model.random_state
 
-        if cvxpy:
-            # use cvxpy to predict
+        if method == "l1":
+            H_X = self.model.H[:, :-1]
+            W = cp.Variable((data_new.shape[0], self.num_bases), nonneg=True)
+            objective = cp.Minimize(
+                cp.sum_squares(data_new - W @ H_X) + l1_reg * cp.sum(W)
+            )
+            prob = cp.Problem(objective)
+            prob.solve(solver=getattr(cp, solver))
+            W_pred = W.value
+            if W_pred is None:
+                W_pred = np.zeros((data_new.shape[0], self.num_bases))
+
+            if np.any(np.all(W_pred < 1e-10, axis=1)):
+                warnings.warn(
+                    "Some rows of W are all zeros. Consider reducing l1_reg.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+            Y_pred = np.dot(W_pred, self.model.H[:, -1])
+
+        elif method == "cvxpy":
             H = self.model.H[:, :-1]
             W = cp.Variable((data_new.shape[0], self.num_bases), nonneg=True)
 
@@ -212,7 +257,7 @@ class SunTopic(SNMF):
             Y_pred = np.dot(W_pred, self.model.H[:, -1])
 
         else:
-            # use SNMF to predict
+            # method == "snmf"
             self._model_pred = SNMF(data_new, self.num_bases, random_state=random_state)
             self._model_pred.H = self.model.H[:, :-1]
 
@@ -305,7 +350,7 @@ class SunTopic(SNMF):
         print(
             f"""
             SunTopic Model Summary
-            {'=' * 50}
+            {"=" * 50}
             Number of topics: {self.num_bases}
             Alpha: {self.alpha}
             Data shape: {self.data.shape}
@@ -383,6 +428,8 @@ class SunTopic(SNMF):
         pred_niter=100,
         compute_topic_err=False,
         topic_err_tol=1e-2,
+        method=None,
+        l1_reg=0.01,
     ):
         """
         Perform cross-validation for different alpha and num_bases values.
@@ -411,6 +458,10 @@ class SunTopic(SNMF):
             Whether to compute topic error.
         topic_err_tol : float, optional
             Early stopping tolerance for topic error, used when compute_topic_err is True.
+        method : str, optional
+            Prediction method: "l1", "cvxpy", or "snmf". Passed to predict().
+        l1_reg : float, optional
+            L1 regularization strength for the "l1" method. Passed to predict().
         """
         for alpha in alpha_range:
             if alpha < 0 or alpha > 1:
@@ -477,6 +528,8 @@ class SunTopic(SNMF):
                                 cvxpy=cvxpy,
                                 compute_topic_err=compute_topic_err,
                                 topic_err_tol=topic_err_tol,
+                                method=method,
+                                l1_reg=l1_reg,
                             )
                             pbar.update(1)
 
@@ -503,6 +556,8 @@ class SunTopic(SNMF):
                                 cvxpy=cvxpy,
                                 compute_topic_err=compute_topic_err,
                                 topic_err_tol=topic_err_tol,
+                                method=method,
+                                l1_reg=l1_reg,
                             )
                             for i, num_bases in enumerate(num_bases_range)
                             for j, alpha in enumerate(alpha_range)
@@ -555,18 +610,18 @@ Call hyperparam_cv() first."
         print(
             f"""
             Cross-Validation Summary
-            {'=' * 50}
+            {"=" * 50}
             Alpha candidate values: {self.cv_values["alpha_range"]}
             Number of topics: {self.cv_values["num_base_range"]}
             Number of folds: {self.cv_values["folds"]}
             CV Random state: {self.cv_values["random_state"]}
-            {'=' * 50}
+            {"=" * 50}
             """  # noqa: T201
         )
 
         for i in range(top_hyperparam_combinations):
             print(
-                f"Top {i+1} hyperparam combinations - num_bases: {self.cv_values['num_base_range'][min_idx[0][i]]:.2f},\
+                f"Top {i + 1} hyperparam combinations - num_bases: {self.cv_values['num_base_range'][min_idx[0][i]]:.2f},\
 alpha: {self.cv_values['alpha_range'][min_idx[1][i]]:.2f}, \
 MSE: {mean_cv_errors[min_idx[0][i], min_idx[1][i]]:.4f}"
             )  # noqa: T201
@@ -637,6 +692,8 @@ def _predict_Y_mse(
     cvxpy,
     compute_topic_err,
     topic_err_tol,
+    method=None,
+    l1_reg=0.0,
 ):
     """
     Fuction for cross-validation predictions as part of the hyperparam_cv method.
@@ -670,6 +727,10 @@ def _predict_Y_mse(
         Whether to compute the topic error.
     topic_err_tol : float
         Early stopping tolerance for topic error.
+    method : str, optional
+        Prediction method passed to predict().
+    l1_reg : float, optional
+        L1 regularization strength passed to predict().
 
     Returns
     -------
@@ -691,5 +752,7 @@ def _predict_Y_mse(
         compute_err=False,
         compute_topic_err=compute_topic_err,
         topic_err_tol=topic_err_tol,
+        method=method,
+        l1_reg=l1_reg,
     )
     return mean_squared_error(Y[test_index], Y_pred)
